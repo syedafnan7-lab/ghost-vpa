@@ -30,9 +30,8 @@
 - `backend/app/simulator/rail.py`: Multi-bank simulated payment rail and scenario execution.
 - `backend/app/core/honeypot_registry.py`: Bank-designated canary VPA storage and lookup.
 - `backend/app/graph/temporal_engine.py`: NetworkX temporal graph, motif analysis, and CS-LP.
-- `backend/app/ml/baseline_lightgbm.py`: Tabular LightGBM transaction-only baseline.
-- `backend/app/ml/graph_lightgbm.py`: Graph-enhanced LightGBM challenger.
-- `backend/app/ml/benchmark.py`: 100,000-node evaluation harness and metric calculation.
+- `backend/app/ml/dataset_generator.py`: Synthetic financial network generator (100k nodes) with natural feature overlap.
+- `backend/app/ml/benchmark.py`: Honest 3-way evaluation harness (Rules Heuristic vs Tabular LightGBM vs Graph Challenger).
 - `backend/app/threat_intel/stix_exporter.py`: OASIS STIX 2.1 JSON bundle generator.
 - `frontend/src/`: React 18 + Vite + Tailwind CSS + D3.js dashboard and network explorer.
 - `docs/`: Comprehensive architecture, threat model, research, and benchmarking specs.

@@ -144,7 +144,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Role Switcher */}
-          <div className="flex items-center space-x-2 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
+          <div 
+            className="flex items-center space-x-2 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800"
+            title="Demonstration Role-Based Action Gating (Simulated RBAC)"
+          >
             <UserCheck className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={role}

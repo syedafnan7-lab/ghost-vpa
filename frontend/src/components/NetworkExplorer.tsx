@@ -36,14 +36,16 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
   // Load ego graph from API
-  const fetchGraph = async (id: string, d = depth) => {
+  const fetchGraph = async (id: string, d = depth, winHours = temporalWindowHours) => {
     setLoading(true);
     try {
-      const data = await api.getEgoGraph(id, d, 50);
+      const data = await api.getEgoGraph(id, d, 50, winHours);
       setGraphData(data);
       if (data.nodes.length > 0) {
         const found = data.nodes.find(n => n.id === id) || data.nodes[0];
         setSelectedNode(found);
+      } else {
+        setSelectedNode(null);
       }
     } catch (e) {
       console.error('Failed to load ego graph', e);
@@ -55,9 +57,9 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
   useEffect(() => {
     if (initialEntityId) {
       setFocalId(initialEntityId);
-      fetchGraph(initialEntityId, depth);
+      fetchGraph(initialEntityId, depth, temporalWindowHours);
     } else {
-      fetchGraph(focalId, depth);
+      fetchGraph(focalId, depth, temporalWindowHours);
     }
   }, [initialEntityId]);
 
@@ -213,12 +215,12 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
               placeholder="Focal Entity ID (e.g. ACCT_SYNTH_HDFX_9912)..."
               value={focalId}
               onChange={(e) => setFocalId(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && fetchGraph(focalId, depth)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchGraph(focalId, depth, temporalWindowHours)}
               className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
             />
           </div>
           <button
-            onClick={() => fetchGraph(focalId, depth)}
+            onClick={() => fetchGraph(focalId, depth, temporalWindowHours)}
             disabled={loading}
             className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition"
           >
@@ -235,7 +237,7 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
                 key={d}
                 onClick={() => {
                   setDepth(d);
-                  fetchGraph(focalId, d);
+                  fetchGraph(focalId, d, temporalWindowHours);
                 }}
                 className={`px-2 py-0.5 rounded text-xs font-mono transition ${
                   depth === d ? 'bg-slate-700 text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
@@ -255,7 +257,11 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
               max="72"
               step="12"
               value={temporalWindowHours}
-              onChange={(e) => setTemporalWindowHours(Number(e.target.value))}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setTemporalWindowHours(val);
+                fetchGraph(focalId, depth, val);
+              }}
               className="w-20 accent-amber-500 cursor-pointer"
             />
           </div>
@@ -264,6 +270,16 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
 
       {/* Main Canvas + Evidence Drawer Container */}
       <div className="relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm h-[580px] flex">
+        {/* Empty temporal window banner */}
+        {graphData && graphData.edges.length === 0 && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center bg-slate-950/90 border border-slate-800 rounded-xl p-4 shadow-xl z-20 max-w-sm">
+            <Layers className="w-7 h-7 text-amber-400 mx-auto mb-2 opacity-80" />
+            <p className="text-xs font-semibold text-slate-200">No Active Edges within {temporalWindowHours}h Window</p>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Transactions for {focalId} fall outside this time range. Expand the slider (48h/72h) to view historical links.
+            </p>
+          </div>
+        )}
         {/* Graph Legend & Canvas Controls */}
         <div className="absolute top-4 left-4 z-10 bg-slate-950/85 backdrop-blur border border-slate-800 rounded-lg p-3 text-xs space-y-1.5 shadow-md">
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Node Legend:</span>

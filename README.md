@@ -15,9 +15,9 @@
 - **The Solution:** Ghost-VPA introduces active cyber-deception into domestic banking rails. Bank-designated and customer-consented canary VPAs (under the RBI September 2026 Draft KYC Directions Annex III SOP) act as high-confidence tripwires.
 - **The Result:**
   - **$< 5\text{ ms}$** instant tripwire alert on canary interaction.
-  - **Zero Real Funds Movement** (quarantined in internal suspense ledger).
+  - **Zero Real Funds Movement** (pre-routing sidecar filter prevents core posting).
   - **Canary-Seeded Graph Propagation** traces connected accounts, upstream feeders, and layering chains across a 72-hour temporal window.
-  - **$> 94\%$ Precision** and **$> 73\%$ reduction in false-positive alerts** over tabular baselines on a 100,000-node benchmark.
+  - **$99.5\%$ Precision** (+27.1% lift over Tabular LightGBM) and **$94.4\%$ reduction in false-positive rate** (0.1% FPR vs 1.4% Tabular and 12.1% Rules) on a 100,000-node benchmark.
 
 ---
 

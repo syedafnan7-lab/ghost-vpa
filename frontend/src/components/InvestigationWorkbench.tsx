@@ -152,7 +152,7 @@ export const InvestigationWorkbench: React.FC<InvestigationWorkbenchProps> = ({
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  RBI SOP Case Actions (Current Actor Role: <strong className="text-amber-400">{role}</strong>)
+                  RBI SOP Case Actions (Demonstration Role-Based Action Gating: <strong className="text-amber-400">{role}</strong>)
                 </span>
                 <span className="text-[11px] text-slate-500">Separation of Duties Enforced</span>
               </div>

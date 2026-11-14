@@ -1,0 +1,169 @@
+{
+  "dataset_name": "Synthetic Indian UPI/IMPS Network (100,000 Entities)",
+  "total_nodes": 100000,
+  "total_edges": 25000,
+  "rules_baseline": {
+    "model_name": "Static Rules-Based Heuristic",
+    "precision": 0.201,
+    "recall": 0.172,
+    "f1_score": 0.185,
+    "pr_auc": 0.035,
+    "roc_auc": 0.526,
+    "false_positive_rate": 0.121,
+    "p50_latency_ms": 0.0173,
+    "p95_latency_ms": 0.0208,
+    "p99_latency_ms": 0.026,
+    "confusion_matrix": {
+      "true_positive": 193,
+      "false_positive": 769,
+      "true_negative": 5612,
+      "false_negative": 926
+    },
+    "top_features": {
+      "velocity_delta_sec < 180": 1.0,
+      "amount > 1.8*avg": 1.0,
+      "historical_tx_24h > 25": 1.0
+    }
+  },
+  "tabular_baseline": {
+    "model_name": "Tabular LightGBM (Transaction-Only)",
+    "precision": 0.783,
+    "recall": 0.29,
+    "f1_score": 0.424,
+    "pr_auc": 0.63,
+    "roc_auc": 0.896,
+    "false_positive_rate": 0.014,
+    "p50_latency_ms": 2.1698,
+    "p95_latency_ms": 3.2118,
+    "p99_latency_ms": 3.4987,
+    "confusion_matrix": {
+      "true_positive": 325,
+      "false_positive": 90,
+      "true_negative": 6291,
+      "false_negative": 794
+    },
+    "top_features": {
+      "amount_inr": 344.0,
+      "hour_of_day": 261.0,
+      "is_weekend": 49.0,
+      "historical_tx_count_24h": 477.0,
+      "avg_amount_72h": 241.0,
+      "velocity_delta_sec": 428.0
+    }
+  },
+  "graph_enhanced": {
+    "model_name": "Canary-Seeded Graph LightGBM Challenger",
+    "precision": 0.995,
+    "recall": 0.988,
+    "f1_score": 0.992,
+    "pr_auc": 1.0,
+    "roc_auc": 1.0,
+    "false_positive_rate": 0.001,
+    "p50_latency_ms": 2.2027,
+    "p95_latency_ms": 3.2664,
+    "p99_latency_ms": 3.6597,
+    "confusion_matrix": {
+      "true_positive": 1106,
+      "false_positive": 5,
+      "true_negative": 6376,
+      "false_negative": 13
+    },
+    "top_features": {
+      "amount_inr": 98.0,
+      "hour_of_day": 44.0,
+      "is_weekend": 6.0,
+      "historical_tx_count_24h": 286.0,
+      "avg_amount_72h": 56.0,
+      "velocity_delta_sec": 130.0,
+      "canary_hop_distance": 81.0,
+      "cs_lp_risk_score": 237.0,
+      "fan_in_ratio_60m": 274.0,
+      "fan_out_ratio_60m": 376.0,
+      "amount_conservation_ratio": 353.0,
+      "shared_device_mule_count": 159.0
+    }
+  },
+  "fpr_reduction_pct": 94.4,
+  "precision_lift_pct": 27.1,
+  "curve_data": [
+    {
+      "threshold": 0.0,
+      "tab_precision": 0.149,
+      "tab_recall": 1.0,
+      "graph_precision": 0.149,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.231,
+      "tab_recall": 0.999,
+      "graph_precision": 0.406,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.239,
+      "tab_recall": 0.999,
+      "graph_precision": 0.508,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.247,
+      "tab_recall": 0.998,
+      "graph_precision": 0.599,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.255,
+      "tab_recall": 0.997,
+      "graph_precision": 0.659,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.263,
+      "tab_recall": 0.996,
+      "graph_precision": 0.724,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.002,
+      "tab_precision": 0.271,
+      "tab_recall": 0.995,
+      "graph_precision": 0.801,
+      "graph_recall": 0.999
+    },
+    {
+      "threshold": 0.006,
+      "tab_precision": 0.28,
+      "tab_recall": 0.99,
+      "graph_precision": 0.896,
+      "graph_recall": 0.999
+    },
+    {
+      "threshold": 0.617,
+      "tab_precision": 0.29,
+      "tab_recall": 0.986,
+      "graph_precision": 0.996,
+      "graph_recall": 0.988
+    },
+    {
+      "threshold": 0.996,
+      "tab_precision": 0.299,
+      "tab_recall": 0.979,
+      "graph_precision": 1.0,
+      "graph_recall": 0.856
+    },
+    {
+      "threshold": 0.999,
+      "tab_precision": 0.306,
+      "tab_recall": 0.965,
+      "graph_precision": 1.0,
+      "graph_recall": 0.002
+    }
+  ],
+  "feature_importance_type": "LightGBM Split/Gain Importance",
+  "evaluation_protocol": "Strict Chronological Train (70%) / Holdout Test (30%)"
+}

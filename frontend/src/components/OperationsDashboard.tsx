@@ -48,7 +48,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Canary interactions trigger immediate operational flags (<code className="text-amber-300">REVIEW_REQUIRED</code>) with zero real funds movement. Ring-fenced suspense ledger prevents outbound leakage while analysts enforce the 20-day customer explanation window and 60-day maximum statutory hold SLA.
+            Canary interactions trigger immediate operational flags (<code className="text-amber-300">REVIEW_REQUIRED</code>) with zero real funds movement. Pre-routing CBS sidecar filter intercepts the attempt and tags the sender for review with zero core ledger posting, while analysts enforce the 20-day customer explanation window and 60-day maximum statutory hold SLA.
           </p>
         </div>
       </div>
@@ -91,7 +91,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
             <span className="text-2xl font-bold font-mono text-red-400">{totalHits}</span>
             <span className="text-xs text-emerald-400 font-medium">Zero Leakage</span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">₹0.00 Lost • Ring-Fenced Suspense GL</p>
+          <p className="text-[11px] text-slate-500 mt-1">₹0.00 Lost • Pre-Routing CBS Filter (Zero Posting)</p>
         </div>
 
         {/* Triage Latency SLA */}

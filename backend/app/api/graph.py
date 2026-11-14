@@ -9,7 +9,8 @@ router = APIRouter(prefix="/api/v1/graph", tags=["Temporal Graph Intelligence"])
 async def get_ego_graph(
     entity_id: str,
     depth: int = Query(2, ge=1, le=3),
-    max_nodes: int = Query(50, ge=5, le=100)
+    max_nodes: int = Query(50, ge=5, le=100),
+    window_hours: int = Query(72, ge=1, le=168)
 ):
     """Returns bounded ego-network around focal entity (sender, feeder, canary) for interactive D3 rendering."""
     sim_time = clock.now()
@@ -17,7 +18,8 @@ async def get_ego_graph(
         focal_id=entity_id,
         current_sim_time=sim_time,
         max_depth=depth,
-        max_nodes=max_nodes
+        max_nodes=max_nodes,
+        window_hours=window_hours
     )
     return response
 

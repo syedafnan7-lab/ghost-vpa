@@ -65,15 +65,24 @@ class TemporalGraphEngine:
             self.graph.add_node(dev_id, label=dev_id, node_type="DEVICE_TOKEN", is_canary=False)
         self.graph.add_edge(u, dev_id, key=f"DEV_{event.event_id}", amount_inr=0.0, timestamp=event.timestamp, is_tripwire=False)
 
-    def prune_expired_edges(self, current_sim_time: datetime):
+        # Enforce 72-hour sliding window expiration on ingestion
+        if event.timestamp:
+            self.prune_expired_edges(event.timestamp)
+
+    def prune_expired_edges(self, current_sim_time: datetime) -> int:
         """Removes edges older than the 72-hour sliding window and purges isolated benign nodes."""
+        if current_sim_time.tzinfo is None:
+            current_sim_time = current_sim_time.replace(tzinfo=timezone.utc)
         cutoff = current_sim_time - timedelta(hours=self.window_hours)
         edges_to_remove = []
 
         for u, v, k, data in self.graph.edges(keys=True, data=True):
             edge_time = data.get("timestamp")
-            if edge_time and edge_time < cutoff:
-                edges_to_remove.append((u, v, k))
+            if edge_time:
+                if edge_time.tzinfo is None:
+                    edge_time = edge_time.replace(tzinfo=timezone.utc)
+                if edge_time < cutoff:
+                    edges_to_remove.append((u, v, k))
 
         for u, v, k in edges_to_remove:
             self.graph.remove_edge(u, v, key=k)
@@ -82,6 +91,8 @@ class TemporalGraphEngine:
         isolated = [n for n, deg in self.graph.degree() if deg == 0 and n not in self.canary_nodes]
         for n in isolated:
             self.graph.remove_node(n)
+
+        return len(edges_to_remove)
 
     def compute_cslp_scores(self, current_sim_time: datetime) -> Dict[str, float]:
         """Canary-Seeded Label Propagation (CS-LP).
@@ -189,9 +200,11 @@ class TemporalGraphEngine:
         focal_id: str,
         current_sim_time: datetime,
         max_depth: int = 2,
-        max_nodes: int = 50
+        max_nodes: int = 50,
+        window_hours: int = 72
     ) -> EgoGraphResponse:
-        """Returns bounded ego-network around focal entity for D3 visualization."""
+        """Returns bounded ego-network around focal entity for D3 visualization,
+        filtered by the temporal sliding window (window_hours)."""
         if focal_id not in self.graph:
             return EgoGraphResponse(
                 focal_entity_id=focal_id,
@@ -199,10 +212,23 @@ class TemporalGraphEngine:
                 total_nodes=0,
                 total_edges=0,
                 nodes=[],
-                edges=[]
+                edges=[],
+                detected_motifs=[]
             )
 
-        # BFS bounded ego expansion
+        if current_sim_time.tzinfo is None:
+            current_sim_time = current_sim_time.replace(tzinfo=timezone.utc)
+        cutoff = current_sim_time - timedelta(hours=window_hours)
+
+        def is_edge_active(edge_data: Dict[str, Any]) -> bool:
+            t = edge_data.get("timestamp")
+            if not t:
+                return True
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
+            return t >= cutoff
+
+        # BFS bounded ego expansion traversing only active edges within window_hours
         visited_nodes: Set[str] = {focal_id}
         queue = [(focal_id, 0)]
         while queue and len(visited_nodes) < max_nodes:
@@ -210,25 +236,48 @@ class TemporalGraphEngine:
             if d >= max_depth:
                 continue
 
-            # Inbound neighbors (upstream feeders)
+            # Inbound neighbors (upstream feeders) with at least one active edge
             for pred in self.graph.predecessors(curr):
-                if pred not in visited_nodes:
-                    visited_nodes.add(pred)
-                    queue.append((pred, d + 1))
-                    if len(visited_nodes) >= max_nodes:
-                        break
+                edges_dict = self.graph.get_edge_data(pred, curr) or {}
+                if any(is_edge_active(data) for data in edges_dict.values()):
+                    if pred not in visited_nodes:
+                        visited_nodes.add(pred)
+                        queue.append((pred, d + 1))
+                        if len(visited_nodes) >= max_nodes:
+                            break
 
-            # Outbound neighbors (layering mules)
+            # Outbound neighbors (layering mules) with at least one active edge
             for succ in self.graph.successors(curr):
-                if succ not in visited_nodes:
-                    visited_nodes.add(succ)
-                    queue.append((succ, d + 1))
-                    if len(visited_nodes) >= max_nodes:
-                        break
+                edges_dict = self.graph.get_edge_data(curr, succ) or {}
+                if any(is_edge_active(data) for data in edges_dict.values()):
+                    if succ not in visited_nodes:
+                        visited_nodes.add(succ)
+                        queue.append((succ, d + 1))
+                        if len(visited_nodes) >= max_nodes:
+                            break
+
+        # Collect active edges within the visited ego subgraph
+        sub_edges: List[GraphEdge] = []
+        nodes_with_edges: Set[str] = {focal_id}
+        for u, v, k, data in self.graph.edges(keys=True, data=True):
+            if u in visited_nodes and v in visited_nodes and is_edge_active(data):
+                nodes_with_edges.add(u)
+                nodes_with_edges.add(v)
+                sub_edges.append(GraphEdge(
+                    source=u,
+                    target=v,
+                    amount_inr=data.get("amount_inr", 0.0),
+                    timestamp=data.get("timestamp", current_sim_time),
+                    rail=data.get("payment_rail", "UPI"),
+                    is_tripwire=data.get("is_tripwire", False)
+                ))
+
+        # Only retain nodes that are either focal or incident to an active edge
+        active_nodes = visited_nodes.intersection(nodes_with_edges)
 
         cslp_scores = self.compute_cslp_scores(current_sim_time)
         sub_nodes: List[GraphNode] = []
-        for n in visited_nodes:
+        for n in active_nodes:
             data = self.graph.nodes[n]
             ntype = data.get("node_type", "BENIGN_ACCOUNT")
             is_canary = data.get("is_canary", False)
@@ -252,18 +301,6 @@ class TemporalGraphEngine:
                 out_degree=self.graph.out_degree(n),
                 metadata={"created_at": str(data.get("created_at", ""))}
             ))
-
-        sub_edges: List[GraphEdge] = []
-        for u, v, k, data in self.graph.edges(keys=True, data=True):
-            if u in visited_nodes and v in visited_nodes:
-                sub_edges.append(GraphEdge(
-                    source=u,
-                    target=v,
-                    amount_inr=data.get("amount_inr", 0.0),
-                    timestamp=data.get("timestamp", current_sim_time),
-                    rail=data.get("payment_rail", "UPI"),
-                    is_tripwire=data.get("is_tripwire", False)
-                ))
 
         detected_motifs = self.detect_motifs(focal_id, current_sim_time)
 

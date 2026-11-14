@@ -57,7 +57,7 @@ The application opens at `http://localhost:5173`. Backend docs available at `htt
   - In $< 5\text{ ms}$, the canary tripwire activates.
   - A crimson alert fires on screen.
   - The remitter account `ACCT_SYNTH_HDFX_9912` is instantly marked `REVIEW_REQUIRED`.
-  - Point to the ledger invariant badge: **"ZERO FUNDS TRANSFERRED (Ring-Fenced Suspense)"**.
+  - Point to the ledger invariant badge: **"ZERO FUNDS TRANSFERRED (Pre-Routing CBS Intercept)"**.
 
 ### Minute 2:00 - 3:15: Scenario B & Network Explorer — Upstream Feeder Unmasking
 - **Action:** Click **"Run Scenario B: Shared Upstream Feeder"**, then navigate to **Network Explorer**.

@@ -23,15 +23,19 @@ class ModelMetricSummary(BaseModel):
     false_positive_rate: float
     p50_latency_ms: float
     p95_latency_ms: float
+    p99_latency_ms: float = 0.0
     confusion_matrix: ConfusionMatrix
-    top_features: Dict[str, float]
+    top_features: Dict[str, float] = {}
 
 class BenchmarkResultsResponse(BaseModel):
     dataset_name: str
     total_nodes: int
     total_edges: int
+    rules_baseline: ModelMetricSummary
     tabular_baseline: ModelMetricSummary
     graph_enhanced: ModelMetricSummary
     fpr_reduction_pct: float
     precision_lift_pct: float
     curve_data: List[Dict[str, Any]]
+    feature_importance_type: str = "LightGBM Split/Gain Importance"
+    evaluation_protocol: str = "Strict Chronological Train (70%) / Holdout Test (30%)"

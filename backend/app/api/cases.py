@@ -1,24 +1,42 @@
 import json
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.db.session import get_db
 from backend.app.db.models import CaseModel
 from backend.app.core.audit_logger import audit_logger
+from backend.app.core.simulation_clock import clock
 from backend.app.schemas.cases import CaseDossierResponse, CaseActionPayload
 from backend.app.threat_intel.stix_exporter import stix_exporter
 
 router = APIRouter(prefix="/api/v1/cases", tags=["Investigation Workbench & Cases"])
+
+def compute_case_deadlines(created_at: datetime, sim_now: datetime) -> Tuple[int, int]:
+    """Dynamically computes the 60-day SOP Day Counter and 20-Day Customer Explanation Window
+    relative to the advancing simulation clock."""
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    if sim_now.tzinfo is None:
+        sim_now = sim_now.replace(tzinfo=timezone.utc)
+    elapsed_seconds = max(0.0, (sim_now - created_at).total_seconds())
+    elapsed_days = int(elapsed_seconds // 86400)
+    sop_day_counter = min(60, max(1, elapsed_days + 1))
+    explanation_days_left = max(0, 20 - elapsed_days)
+    return sop_day_counter, explanation_days_left
 
 @router.get("", response_model=List[CaseDossierResponse])
 async def list_cases(db: AsyncSession = Depends(get_db)):
     stmt = select(CaseModel).order_by(CaseModel.created_at.desc())
     result = await db.execute(stmt)
     cases = result.scalars().all()
+    sim_now = clock.now()
     out = []
     for c in cases:
+        sop_day, exp_days = compute_case_deadlines(c.created_at, sim_now)
+        # If case is closed, explanation days left is 0
+        active_exp_days = exp_days if c.case_status not in ["CLOSED_UNWITTING_VICTIM", "CLOSED_CONFIRMED_MULE"] else 0
         out.append(CaseDossierResponse(
             case_id=c.case_id,
             target_account_id=c.target_account_id,
@@ -26,8 +44,8 @@ async def list_cases(db: AsyncSession = Depends(get_db)):
             target_bank=c.target_bank,
             originating_alert_id=c.originating_alert_id,
             case_status=c.case_status,
-            sop_day_counter=c.sop_day_counter,
-            explanation_days_left=c.explanation_days_left,
+            sop_day_counter=sop_day,
+            explanation_days_left=active_exp_days,
             assigned_analyst=c.assigned_analyst,
             cluster_id=c.cluster_id,
             connected_mule_count=c.connected_mule_count,
@@ -95,6 +113,10 @@ async def take_case_action(
     await db.commit()
     await db.refresh(case)
 
+    sim_now = clock.now()
+    sop_day, exp_days = compute_case_deadlines(case.created_at, sim_now)
+    active_exp_days = exp_days if case.case_status not in ["CLOSED_UNWITTING_VICTIM", "CLOSED_CONFIRMED_MULE"] else 0
+
     return CaseDossierResponse(
         case_id=case.case_id,
         target_account_id=case.target_account_id,
@@ -102,8 +124,8 @@ async def take_case_action(
         target_bank=case.target_bank,
         originating_alert_id=case.originating_alert_id,
         case_status=case.case_status,
-        sop_day_counter=case.sop_day_counter,
-        explanation_days_left=case.explanation_days_left,
+        sop_day_counter=sop_day,
+        explanation_days_left=active_exp_days,
         assigned_analyst=case.assigned_analyst,
         cluster_id=case.cluster_id,
         connected_mule_count=case.connected_mule_count,

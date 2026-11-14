@@ -1,0 +1,107 @@
+{
+  "dataset_name": "Synthetic Indian UPI/IMPS Network (100,000 Entities)",
+  "total_nodes": 100000,
+  "total_edges": 25000,
+  "tabular_baseline": {
+    "model_name": "Tabular LightGBM (Transaction-Only)",
+    "precision": 0.143,
+    "recall": 1.0,
+    "f1_score": 0.25,
+    "pr_auc": 1.0,
+    "roc_auc": 1.0,
+    "false_positive_rate": 1.0,
+    "p50_latency_ms": 0.0,
+    "p95_latency_ms": 0.01,
+    "confusion_matrix": {
+      "true_positive": 1073,
+      "false_positive": 6427,
+      "true_negative": 0,
+      "false_negative": 0
+    },
+    "top_features": {
+      "amount_inr": 100.0,
+      "hour_of_day": 41.0,
+      "is_weekend": 1.0,
+      "historical_tx_count_24h": 103.0,
+      "avg_amount_72h": 18.0,
+      "velocity_delta_sec": 29.0
+    }
+  },
+  "graph_enhanced": {
+    "model_name": "Graph-Enhanced LightGBM (Canary-Seeded)",
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "pr_auc": 1.0,
+    "roc_auc": 1.0,
+    "false_positive_rate": 0.0,
+    "p50_latency_ms": 0.0,
+    "p95_latency_ms": 0.01,
+    "confusion_matrix": {
+      "true_positive": 1073,
+      "false_positive": 0,
+      "true_negative": 6427,
+      "false_negative": 0
+    },
+    "top_features": {
+      "amount_inr": 125.0,
+      "hour_of_day": 42.0,
+      "is_weekend": 1.0,
+      "historical_tx_count_24h": 121.0,
+      "avg_amount_72h": 22.0,
+      "velocity_delta_sec": 51.0,
+      "canary_hop_distance": 0.0,
+      "cs_lp_risk_score": 43.0,
+      "fan_in_ratio_60m": 12.0,
+      "fan_out_ratio_60m": 9.0,
+      "amount_conservation_ratio": 6.0,
+      "shared_device_mule_count": 0.0
+    }
+  },
+  "fpr_reduction_pct": 100.0,
+  "precision_lift_pct": 599.0,
+  "curve_data": [
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.143,
+      "tab_recall": 1.0,
+      "graph_precision": 0.143,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.945,
+      "tab_recall": 1.0,
+      "graph_precision": 0.572,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.979,
+      "tab_recall": 1.0,
+      "graph_precision": 0.752,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.984,
+      "tab_recall": 1.0,
+      "graph_precision": 0.815,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 0.992,
+      "tab_recall": 1.0,
+      "graph_precision": 0.899,
+      "graph_recall": 1.0
+    },
+    {
+      "threshold": 0.001,
+      "tab_precision": 1.0,
+      "tab_recall": 1.0,
+      "graph_precision": 0.945,
+      "graph_recall": 1.0
+    }
+  ]
+}

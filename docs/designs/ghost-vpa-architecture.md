@@ -31,7 +31,7 @@ Ghost-VPA is an active cyber-deception and temporal graph-intelligence platform 
    [ Fast Triage Broadcast ]                     [ Background Event Queue ]
    - Set SENDER: REVIEW_REQUIRED                           │
    - Emit WebSocket Alert (< 5ms)                          ▼
-   - Ring-Fence Suspense (Zero Fund Move)        [ Async Worker Pool (to_thread) ]
+   - Pre-Routing CBS Intercept (Zero Fund Move)  [ Async Worker Pool (to_thread) ]
                                                            │
                                                            ▼
                              [ TIER 2: GRAPH & ML ANALYTICS ENGINE ]
@@ -83,7 +83,7 @@ Ghost-VPA is an active cyber-deception and temporal graph-intelligence platform 
   - Push event to an internal `asyncio.Queue` for background graph ingestion.
 
 ### Tier 2: Graph & ML Analytics Engine
-- **Files:** `backend/app/graph/temporal_engine.py`, `backend/app/ml/baseline_lightgbm.py`, `backend/app/ml/graph_lightgbm.py`, `backend/app/ml/benchmark.py`
+- **Files:** `backend/app/graph/temporal_engine.py`, `backend/app/ml/dataset_generator.py`, `backend/app/ml/benchmark.py`
 - **Graph Topology:** In-memory `networkx.MultiDiGraph` updated with **every transaction** (both benign and canary) so upstream multi-hop paths exist.
 - **72-Hour Sliding Window & Pruning:** Pruning routine `prune_expired_edges(t_cutoff)` evicts edges older than $t_{sim} - 72\text{ hours}$ to prevent unbounded memory growth.
 - **Motif Detection:**

@@ -25,6 +25,8 @@ To prevent any possibility of real customer PII leakage, Ghost-VPA enforces a st
 
 ## 2. Role-Based Access Control (RBAC) Specification
 
+> **Architectural Note:** In this demonstration prototype, RBAC is implemented as **Simulated Role-Based Action Gating** enforced via the `X-User-Role` request header and UI role selector with strict backend endpoint validation (e.g., 403 Forbidden on hold attempts by non-Supervisors). In a production bank environment, this layer interfaces with enterprise IAM (Active Directory / Okta / SAML 2.0).
+
 The system implements 3 distinct operational roles:
 
 | Role Name | Scope & Permissions | Permitted Actions | Prohibited Actions |

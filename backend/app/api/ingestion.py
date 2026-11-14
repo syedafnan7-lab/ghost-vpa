@@ -23,7 +23,7 @@ async def ingest_payment_attempt(event: PaymentAttemptEvent, db: AsyncSession = 
     1. Canary Registry Lookup (in-memory O(1))
     2. Tripwire Alert Generation
     3. Sender Tagging: REVIEW_REQUIRED
-    4. Ring-Fenced Suspense Ledger (Zero Funds Moved)
+    4. Pre-Routing Sidecar Intercept (Zero Core Posting / Zero Funds Moved)
     5. Graph Ingestion & Event Persistence"""
     start_time = time.perf_counter()
     sim_time = event.timestamp or clock.now()

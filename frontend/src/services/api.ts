@@ -39,8 +39,8 @@ export const api = {
   },
 
   // Temporal Graph
-  getEgoGraph: async (entityId: string, depth = 2, maxNodes = 50): Promise<EgoGraphData> => {
-    const res = await fetch(`${API_BASE}/graph/ego/${encodeURIComponent(entityId)}?depth=${depth}&max_nodes=${maxNodes}`);
+  getEgoGraph: async (entityId: string, depth = 2, maxNodes = 50, windowHours = 72): Promise<EgoGraphData> => {
+    const res = await fetch(`${API_BASE}/graph/ego/${encodeURIComponent(entityId)}?depth=${depth}&max_nodes=${maxNodes}&window_hours=${windowHours}`);
     return res.json();
   },
 

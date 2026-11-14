@@ -6,6 +6,8 @@ from typing import Optional, List
 from backend.app.core.simulation_clock import clock
 from backend.app.schemas.events import PaymentAttemptEvent
 from backend.app.api.ingestion import ingest_payment_attempt
+from backend.app.api.websocket_manager import ws_manager
+from backend.app.graph.temporal_engine import temporal_graph
 from backend.app.db.session import AsyncSessionLocal
 
 BANKS = ["HDFX", "ICIX", "SBINX", "AXSX"]
@@ -29,11 +31,28 @@ class PaymentRailSimulator:
             self._worker_task = None
 
     async def _simulation_loop(self):
-        """Generates continuous background synthetic payment attempts."""
+        """Generates continuous background synthetic payment attempts and broadcasts clock ticks."""
+        tick_counter = 0
         while self._is_running:
             try:
+                sim_now = clock.now()
                 if not clock.is_paused():
                     await self.generate_random_attempt()
+                    tick_counter += 1
+                    # Enforce 72-hour sliding window pruning periodically
+                    if tick_counter % 5 == 0:
+                        temporal_graph.prune_expired_edges(sim_now)
+
+                # Broadcast periodic CLOCK_TICK to all connected WebSocket clients
+                await ws_manager.broadcast({
+                    "type": "CLOCK_TICK",
+                    "data": {
+                        "sim_time": sim_now.isoformat(),
+                        "is_paused": clock.is_paused(),
+                        "speed_multiplier": clock.speed()
+                    }
+                })
+
                 # Tick interval scaled by speed
                 delay = max(0.05, 1.0 / clock.speed())
                 await asyncio.sleep(delay)

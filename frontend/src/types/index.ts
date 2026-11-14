@@ -118,6 +118,25 @@ export interface BenchmarkMetrics {
   dataset_name: string;
   total_nodes: number;
   total_edges: number;
+  rules_baseline: {
+    model_name: string;
+    precision: number;
+    recall: number;
+    f1_score: number;
+    pr_auc: number;
+    roc_auc: number;
+    false_positive_rate: number;
+    p50_latency_ms: number;
+    p95_latency_ms: number;
+    p99_latency_ms?: number;
+    confusion_matrix: {
+      true_positive: number;
+      false_positive: number;
+      true_negative: number;
+      false_negative: number;
+    };
+    top_features: Record<string, number>;
+  };
   tabular_baseline: {
     model_name: string;
     precision: number;
@@ -128,6 +147,7 @@ export interface BenchmarkMetrics {
     false_positive_rate: number;
     p50_latency_ms: number;
     p95_latency_ms: number;
+    p99_latency_ms?: number;
     confusion_matrix: {
       true_positive: number;
       false_positive: number;
@@ -146,6 +166,7 @@ export interface BenchmarkMetrics {
     false_positive_rate: number;
     p50_latency_ms: number;
     p95_latency_ms: number;
+    p99_latency_ms?: number;
     confusion_matrix: {
       true_positive: number;
       false_positive: number;
@@ -163,6 +184,8 @@ export interface BenchmarkMetrics {
     graph_precision: number;
     graph_recall: number;
   }>;
+  feature_importance_type?: string;
+  evaluation_protocol?: string;
 }
 
 export interface AuditLog {

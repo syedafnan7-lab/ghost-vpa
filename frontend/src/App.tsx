@@ -76,6 +76,10 @@ export const App: React.FC = () => {
           setAlerts((prev) => [payload.data, ...prev.slice(0, 29)]);
           refreshCanaries();
           refreshCases();
+        } else if (payload.type === 'CLOCK_TICK') {
+          setSimTime(payload.data.sim_time);
+          setIsPaused(payload.data.is_paused);
+          setSpeed(payload.data.speed_multiplier);
         }
       } catch (err) {
         console.error('WS Parse Error', err);
