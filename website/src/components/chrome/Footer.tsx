@@ -1,8 +1,9 @@
 import { Mark } from '@/components/ui/Mark';
-import { NAV_ITEMS, REPO_URL } from '@/data/nav';
+import { NAV_ITEMS, REPO_URL, WORKBENCH_URL } from '@/data/nav';
 
 const EVIDENCE_LINKS = [
-  { label: 'Repository (gems-ghost)', href: REPO_URL },
+  { label: 'Live Analyst Workbench (Port 5173)', href: WORKBENCH_URL },
+  { label: 'Repository (GitHub)', href: REPO_URL },
   { label: 'Architecture specification', href: `${REPO_URL}/docs/designs/ghost-vpa-architecture.md` },
   { label: 'Benchmark methodology', href: `${REPO_URL}/docs/benchmark-methodology.md` },
   { label: 'Remediation register', href: `${REPO_URL}/docs/remediation/remediation-register.md` },

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import type { GraphNode, ScenarioGraph } from '@/data/graph';
-import { NODE_COLOR } from '@/lib/palette';
 
 type SimNode = GraphNode & d3.SimulationNodeDatum;
 type SimLink = d3.SimulationLinkDatum<SimNode> & {
@@ -24,22 +23,55 @@ const HEIGHT = 480;
 function radiusOf(node: GraphNode): number {
   switch (node.kind) {
     case 'CANARY':
-      return 10;
+      return 13;
     case 'FEEDER':
-      return 9;
+      return 11;
     case 'MULE':
-      return 8;
+      return 10;
     case 'DEVICE':
-      return 6;
+      return 7;
     default:
-      return 4.5;
+      return 5;
   }
 }
 
+function nodeFormPath(node: GraphNode): string {
+  const r = radiusOf(node);
+  if (node.kind === 'CANARY') {
+    // Pointy-top hexagon for canary bank decoys
+    const pts = [
+      [0, r],
+      [-0.866 * r, 0.5 * r],
+      [-0.866 * r, -0.5 * r],
+      [0, -r],
+      [0.866 * r, -0.5 * r],
+      [0.866 * r, 0.5 * r],
+    ];
+    return `M${pts.map((p) => p.join(',')).join('L')}Z`;
+  }
+  if (node.kind === 'MULE') {
+    // Square mark for triage flags (REVIEW_REQUIRED)
+    const s = r * 0.86;
+    return `M${-s},${-s}H${s}V${s}H${-s}Z`;
+  }
+  // Circular mark for feeder, device, and benign accounts
+  return `M${r},0A${r},${r} 0 1,1 ${-r},0A${r},${r} 0 1,1 ${r},0Z`;
+}
+
 function colorOf(node: GraphNode): string {
-  if (node.kind === 'BENIGN') return NODE_COLOR.neutral;
-  const key = node.kind.toLowerCase() as keyof typeof NODE_COLOR;
-  return NODE_COLOR[key] ?? NODE_COLOR.neutral;
+  switch (node.kind) {
+    case 'CANARY':
+      return '#F5A524'; // Canary amber
+    case 'MULE':
+      return '#E8EEF7'; // Neutral ink (triage flag)
+    case 'FEEDER':
+      return '#D95926'; // Upstream feeder orange
+    case 'DEVICE':
+      return '#38BDF8'; // Shared device blue
+    case 'BENIGN':
+    default:
+      return '#2DD4A7'; // Benign aqua
+  }
 }
 
 function truncate(value: string, max = 26): string {
@@ -132,32 +164,26 @@ export function EgoGraph({ graph, selectedId, onSelect }: EgoGraphProps) {
       .attr('aria-label', (d) => `${d.kind} ${d.label}, risk ${d.risk.toFixed(2)}`)
       .style('cursor', 'pointer');
 
+    // SVG mark using form and hue encoding
     nodeSel
-      .append('circle')
-      .attr('class', 'halo')
-      .attr('r', (d) => radiusOf(d) + 7)
-      .attr('fill', 'none')
-      .attr('stroke', '#E8EEF7')
-      .attr('stroke-width', 1);
-    nodeSel
-      .append('circle')
-      .attr('class', 'primary')
-      .attr('r', radiusOf)
+      .append('path')
+      .attr('class', 'primary-mark')
+      .attr('d', nodeFormPath)
       .attr('fill', colorOf)
-      .attr('fill-opacity', (d) => (d.kind === 'BENIGN' ? 0.5 : 0.95));
-    nodeSel
-      .filter((d) => d.kind === 'DEVICE')
-      .select('circle.primary')
-      .attr('rx', 5)
-      .attr('ry', 5);
+      .attr('fill-opacity', (d) => (d.kind === 'BENIGN' ? 0.6 : 0.95))
+      .attr('stroke', (d) => (selectedId === d.id ? '#FFFFFF' : '#04070C'))
+      .attr('stroke-width', (d) => (selectedId === d.id ? 2.5 : 1.5));
+
+    // Canary pulsating beacon ring
     nodeSel
       .filter((d) => d.kind === 'CANARY')
       .append('circle')
-      .attr('r', (d) => radiusOf(d) + 5)
+      .attr('r', (d) => radiusOf(d) + 6)
       .attr('fill', 'none')
       .attr('stroke', '#F5A524')
-      .attr('stroke-width', 1)
-      .attr('stroke-dasharray', '2 3');
+      .attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', '3 3')
+      .attr('class', 'pulse-dot');
     nodeSel
       .append('text')
       .attr('y', (d) => radiusOf(d) + 17)
@@ -225,6 +251,10 @@ export function EgoGraph({ graph, selectedId, onSelect }: EgoGraphProps) {
     const selection = nodeSelRef.current;
     if (!selection) return;
     selection.classed('is-selected', (d) => d.id === selectedId);
+    selection
+      .select('path.primary-mark')
+      .attr('stroke', (d) => (d.id === selectedId ? '#FFFFFF' : '#04070C'))
+      .attr('stroke-width', (d) => (d.id === selectedId ? 2.5 : 1.5));
     selection.select('text').attr('fill', (d) => (d.id === selectedId ? '#E8EEF7' : d.kind === 'BENIGN' ? '#5C6B7E' : '#9AA7B8'));
     selection
       .select('text')

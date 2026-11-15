@@ -115,12 +115,17 @@ function PrCurve() {
             </g>
           ))}
         </svg>
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 font-mono text-micro text-ink3">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-px w-4 bg-ink2" /> Tabular LightGBM
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-px w-4 bg-canary" /> Canary-Seeded Graph LightGBM
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line/60 pt-3 font-mono text-micro">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <span className="inline-flex items-center gap-1.5 text-ink2">
+              <span className="h-0.5 w-4 bg-ink2" /> Tabular LightGBM (PR-AUC 0.630)
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-canary">
+              <span className="h-0.5 w-4 bg-canary" /> Canary-Seeded Graph Challenger (PR-AUC 1.000)
+            </span>
+          </div>
+          <span className="chip border-emerald-500/40 text-emerald-400">
+            -99.3% FALSE POSITIVES (5 vs 769)
           </span>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { Mark } from '@/components/ui/Mark';
 import { Reveal } from '@/components/ui/Reveal';
+import { WORKBENCH_URL } from '@/data/nav';
 
 const TELEMETRY = [
   { value: '< 5 ms', label: 'tripwire on canary probe', note: 'simulated rail' },
@@ -32,18 +33,27 @@ export function Hero() {
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
-            <a href="#mechanism" className="btn-primary">
+            <a
+              href={WORKBENCH_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-primary !bg-canary !text-black hover:!bg-[#ffb63d] active:scale-[0.98] transition-transform shadow-lg shadow-canary/10"
+            >
+              <span>Launch Live Workbench</span>
+              <span className="font-mono text-xs">↗</span>
+            </a>
+            <a href="#mechanism" className="btn-ghost active:scale-[0.98] transition-transform">
               Watch the interception
             </a>
-            <a href="#graph" className="btn-ghost">
+            <a href="#graph" className="btn-ghost active:scale-[0.98] transition-transform">
               Explore the graph
             </a>
-            <span className="font-mono text-micro text-ink3">scroll — the field is the system</span>
+            <span className="font-mono text-micro text-ink3 hidden sm:inline-block">scroll — the field is the system</span>
           </div>
 
           <div className="mt-14 grid grid-cols-2 gap-px border border-line bg-line lg:grid-cols-4">
             {TELEMETRY.map((item) => (
-              <div key={item.label} className="bg-void/70 px-4 py-4 backdrop-blur-sm">
+              <div key={item.label} className="bg-void/70 px-4 py-4 backdrop-blur-sm transition-colors hover:bg-void/90">
                 <div className="font-mono text-2xl font-medium text-canary md:text-3xl">{item.value}</div>
                 <div className="mt-1 text-caption text-ink2">{item.label}</div>
                 <div className="mt-0.5 font-mono text-micro text-ink3">{item.note}</div>

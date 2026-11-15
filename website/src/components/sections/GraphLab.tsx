@@ -4,24 +4,23 @@ import { Reveal } from '@/components/ui/Reveal';
 import { EgoGraph } from '@/components/demos/EgoGraph';
 import { AMBIENT_TRAFFIC, recordsFor, type ScenarioId } from '@/data/scenarios';
 import { buildScenarioGraph, evidenceFor, type NodeKind } from '@/data/graph';
-import { NODE_COLOR } from '@/lib/palette';
+import { WORKBENCH_URL } from '@/data/nav';
 import { inr, minutes } from '@/lib/format';
 
-const LEGEND: { kind: NodeKind | 'neutral'; label: string }[] = [
-  { kind: 'CANARY', label: 'Canary (seed)' },
-  { kind: 'MULE', label: 'Mule account' },
-  { kind: 'FEEDER', label: 'Upstream feeder' },
-  { kind: 'DEVICE', label: 'Shared device' },
-  { kind: 'neutral', label: 'Benign / ambient' },
-];
+interface LegendItem {
+  kind: NodeKind | 'neutral';
+  label: string;
+  shape: 'hex' | 'square' | 'circle';
+  fill: string;
+}
 
-const KIND_COLOR: Record<string, string> = {
-  CANARY: NODE_COLOR.canary,
-  MULE: NODE_COLOR.mule,
-  FEEDER: NODE_COLOR.feeder,
-  DEVICE: NODE_COLOR.device,
-  BENIGN: NODE_COLOR.neutral,
-};
+const LEGEND: LegendItem[] = [
+  { kind: 'CANARY', label: 'Canary Honeypot', shape: 'hex', fill: '#F5A524' },
+  { kind: 'MULE', label: 'Suspected Mule (triage)', shape: 'square', fill: '#E8EEF7' },
+  { kind: 'FEEDER', label: 'Upstream Feeder', shape: 'circle', fill: '#D95926' },
+  { kind: 'DEVICE', label: 'Shared Device', shape: 'circle', fill: '#38BDF8' },
+  { kind: 'neutral', label: 'Benign Account', shape: 'circle', fill: '#2DD4A7' },
+];
 
 export function GraphLab() {
   const [scenario, setScenario] = useState<ScenarioId>('B');
@@ -36,8 +35,15 @@ export function GraphLab() {
   }, [scenario, windowHours]);
 
   useEffect(() => {
-    if (selectedId && !graph.nodes.some((node) => node.id === selectedId)) {
-      setSelectedId(null);
+    // Automatically select the primary canary or feeder seed node when switching scenarios or if unselected
+    if (!selectedId || !graph.nodes.some((node) => node.id === selectedId)) {
+      const seedNode =
+        graph.nodes.find((n) => n.kind === 'CANARY') ||
+        graph.nodes.find((n) => n.kind === 'FEEDER') ||
+        graph.nodes[0];
+      if (seedNode) {
+        setSelectedId(seedNode.id);
+      }
     }
   }, [graph, selectedId]);
 
@@ -114,13 +120,23 @@ export function GraphLab() {
           <div className="grid lg:grid-cols-[1.9fr_1fr]">
             <div className="border-b border-line lg:border-b-0 lg:border-r">
               <EgoGraph graph={graph} selectedId={selectedId} onSelect={handleSelect} />
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line px-4 py-3">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line px-4 py-3 bg-void/40">
                 {LEGEND.map((item) => (
-                  <span key={item.label} className="inline-flex items-center gap-1.5 font-mono text-micro text-ink3">
-                    <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: item.kind === 'neutral' ? NODE_COLOR.neutral : KIND_COLOR[item.kind] }}
-                    />
+                  <span key={item.label} className="inline-flex items-center gap-1.5 font-mono text-micro text-ink2">
+                    {item.shape === 'hex' ? (
+                      <svg width="10" height="10" viewBox="-6 -6 12 12" className="shrink-0" aria-hidden="true">
+                        <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill={item.fill} stroke="#04070C" strokeWidth="1" />
+                      </svg>
+                    ) : item.shape === 'square' ? (
+                      <svg width="9" height="9" viewBox="-5 -5 10 10" className="shrink-0" aria-hidden="true">
+                        <rect x="-4.5" y="-4.5" width="9" height="9" fill={item.fill} stroke="#04070C" strokeWidth="1" />
+                      </svg>
+                    ) : (
+                      <span
+                        className="inline-block h-2 w-2 rounded-full shrink-0"
+                        style={{ background: item.fill }}
+                      />
+                    )}
                     {item.label}
                   </span>
                 ))}
@@ -128,16 +144,34 @@ export function GraphLab() {
             </div>
 
             <div className="flex flex-col">
-              <div className="border-b border-line px-4 py-3">
+              <div className="border-b border-line px-4 py-3 flex items-center justify-between">
                 <span className="font-mono text-caption text-ink2">Evidence drawer</span>
+                <span className="font-mono text-micro text-canary">Active Inspection</span>
               </div>
               {evidence && selectedNode ? (
-                <div className="flex-1 px-4 py-4">
+                <div className="flex-1 px-4 py-4 flex flex-col">
                   <div className="flex items-center gap-2">
-                    <span
-                      className="inline-block h-2.5 w-2.5 rounded-full"
-                      style={{ background: KIND_COLOR[selectedNode.kind] }}
-                    />
+                    {selectedNode.kind === 'CANARY' ? (
+                      <svg width="12" height="12" viewBox="-6 -6 12 12" className="shrink-0" aria-hidden="true">
+                        <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill="#F5A524" />
+                      </svg>
+                    ) : selectedNode.kind === 'MULE' ? (
+                      <svg width="11" height="11" viewBox="-5 -5 10 10" className="shrink-0" aria-hidden="true">
+                        <rect x="-4.5" y="-4.5" width="9" height="9" fill="#E8EEF7" />
+                      </svg>
+                    ) : (
+                      <span
+                        className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                        style={{
+                          background:
+                            selectedNode.kind === 'FEEDER'
+                              ? '#D95926'
+                              : selectedNode.kind === 'DEVICE'
+                              ? '#38BDF8'
+                              : '#2DD4A7',
+                        }}
+                      />
+                    )}
                     <h3 className="font-display text-lg font-semibold tracking-[-0.02em]">
                       {evidence.title}
                     </h3>
@@ -163,6 +197,17 @@ export function GraphLab() {
                       </div>
                     ))}
                   </dl>
+
+                  <div className="mt-auto pt-4">
+                    <a
+                      href={WORKBENCH_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-ghost !w-full !py-2 text-center text-xs active:scale-[0.98] transition-transform"
+                    >
+                      Open Node In Workbench →
+                    </a>
+                  </div>
                 </div>
               ) : (
                 <div className="flex-1 px-4 py-6 text-body text-ink3">
