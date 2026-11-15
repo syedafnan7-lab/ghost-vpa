@@ -2,24 +2,236 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   GHOST-VPA DESIGN SYSTEM
+   Direction: "forensic instrument panel" — the look of a bank's internal
+   fraud-ops console. Dense, quiet, monospaced numerics, warm amber as the
+   single accent (the canary), crimson reserved for genuine alarm.
+   ========================================================================== */
+
 @layer base {
+  :root {
+    /* --- Surfaces (three steps, verified against the validator) --- */
+    --surface-canvas: #020617;   /* slate-950 — page */
+    --surface-panel:  #0f172a;   /* slate-900 — cards */
+    --surface-raised: #1e293b;   /* slate-800 — inputs, hover */
+
+    /* --- Ink (all >= 4.5:1 on --surface-panel) --- */
+    --ink-primary:   #f1f5f9;   /* slate-100 */
+    --ink-secondary: #cbd5e1;   /* slate-300 */
+    --ink-muted:     #94a3b8;   /* slate-400 — floor, never slate-500 */
+    --ink-faint:     #64748b;   /* slate-500 — decorative rules only */
+
+    /* --- Accent: the canary. Warning, never "success". --- */
+    --accent-canary:       #f59e0b;
+    --accent-canary-dim:   #b45309;
+    --accent-canary-wash:  rgba(245, 158, 11, 0.12);
+
+    /* --- Status (reserved; icon + label, never colour alone) --- */
+    --status-critical: #ef4444;
+    --status-serious:  #f97316;
+    --status-warning:  #f59e0b;
+    --status-good:     #10b981;
+
+    /* --- Node identity (NetworkExplorer) ------------------------------------
+       A force-directed graph needs the ALL-PAIRS pairlist — any two nodes can
+       end up visually adjacent — and under that pairlist only three hue slots
+       clear the dataviz CVD and normal-vision floors (reference palette, dark
+       mode: worst pair CVD ΔE 9.4, normal-vision 20.9). So the graph carries
+       three hues, and the other two entity classes are encoded by SHAPE:
+         slot 1 blue  — DEVICE_TOKEN
+         slot 2 orange— FEEDER_NODE
+         slot 3 aqua  — benign accounts
+         hexagon      — canary honeypot (reserved accent, not a categorical slot)
+         square       — suspected mule (neutral ink, no hue of its own)
+
+       The mule is deliberately un-hued. A canary tripwire raises a triage flag
+       (REVIEW_REQUIRED), not a confirmed classification — giving it a hue of
+       its own would assert more than the evidence supports.
+
+       Earlier versions of this block claimed "CVD ΔE ≥ 8, validated"; that was
+       never run and the previous five-hue set is what it replaced. Keep this
+       comment in step with the colour block in NetworkExplorer.tsx. */
+    --node-device:    #3987e5;
+    --node-feeder:    #d95926;
+    --node-benign:    #199e70;
+    --node-canary:    #f59e0b;   /* reserved accent — hexagon form */
+    --node-triage:    #e2e8f0;   /* neutral ink — square form */
+
+    /* --- Radii: three steps, no squat blur --- */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* --- Borders: hairline, cool, one step off surface --- */
+    --border-hairline: 1px solid #1e293b;
+    --border-strong:   1px solid #334155;
+
+    /* --- Elevation: shadows barely exist in a dark UI; use them sparingly --- */
+    --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+    /* --- Motion: a four-step scale, 90ms for feedback, 350ms for layout --- */
+    --motion-instant:  90ms;
+    --motion-fast:     150ms;
+    --motion-normal:   250ms;
+    --motion-slow:     350ms;
+    --ease-out:        cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out:     cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-slate-950 text-slate-100 font-sans;
+    @apply bg-slate-950 text-slate-100 antialiased;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Numerals: tabular everywhere a number sits in a column or changes on
+     screen, so digits don't jitter. Proportional only for hero figures. */
+  code, kbd, samp, pre, .font-mono, table {
+    font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'zero', 'ss02';
+  }
+
+  /* Floor: nothing user-facing below 11px. */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface-panel); }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+}
+
+@layer utilities {
+  /* --- Type scale, tuned for a dense console ---------------------------- */
+  .text-micro   { font-size: 11px; line-height: 1.45; }
+  .text-caption { font-size: 12px; line-height: 1.5; }
+  .text-body    { font-size: 13px; line-height: 1.6; }
+
+  /* --- Motion ----------------------------------------------------------- */
+  .transition-instant { transition-duration: var(--motion-instant); }
+  .transition-fast    { transition-duration: var(--motion-fast); }
+  .transition-normal  { transition-duration: var(--motion-normal); }
+  .transition-slow    { transition-duration: var(--motion-slow); }
+  .ease-out-quint     { transition-timing-function: var(--ease-out); }
+  .ease-standard      { transition-timing-function: var(--ease-in-out); }
+
+  /* Focus ring: always visible on keyboard nav, never on mouse click. */
+  .focus-console:focus-visible {
+    outline: 2px solid var(--accent-canary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* --- Motion primitives ------------------------------------------------ */
+  .animate-rise {
+    animation: rise var(--motion-normal) var(--ease-out) both;
+  }
+  .animate-rise-stagger > * {
+    animation: rise var(--motion-normal) var(--ease-out) both;
+  }
+  .animate-rise-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .animate-rise-stagger > *:nth-child(2) { animation-delay: 40ms; }
+  .animate-rise-stagger > *:nth-child(3) { animation-delay: 80ms; }
+  .animate-rise-stagger > *:nth-child(4) { animation-delay: 120ms; }
+  .animate-rise-stagger > *:nth-child(5) { animation-delay: 160ms; }
+  .animate-rise-stagger > *:nth-child(6) { animation-delay: 200ms; }
+
+  .animate-fade-in { animation: fadeIn var(--motion-fast) var(--ease-out) both; }
+
+  /* Loading sweep for skeleton panels — a quiet left-to-right sheen. */
+  .animate-sweep {
+    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.07), transparent);
+    background-size: 200% 100%;
+    animation: sweep 1.4s var(--ease-in-out) infinite;
+  }
+
+  /* The live-pulse: a soft breathing halo for the "simulation running" state. */
+  .animate-live-pulse { animation: livePulse 2s var(--ease-in-out) infinite; }
+
+  /* Emerge: an alert row arriving from the websocket slides in from the top. */
+  .animate-emerge { animation: emerge var(--motion-normal) var(--ease-out) both; }
+}
+
+/* ==========================================================================
+   KEYFRAMES
+   ========================================================================== */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes sweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+@keyframes emerge {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Chain-ribbon: the tip hash marching along a merkle-style trail. */
+@keyframes chainRibbon {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+.animate-chain-ribbon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--accent-canary-wash), transparent);
+  animation: chainRibbon var(--motion-slow) var(--ease-in-out) infinite;
+}
+
+/* ==========================================================================
+   REDUCED MOTION — honour the OS setting, but never go fully static: keep a
+   gentle opacity pulse so "the sim is live" is still legible, and swap every
+   transform for an instant cut.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-rise,
+  .animate-fade-in,
+  .animate-emerge,
+  .animate-rise-stagger > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .animate-sweep { animation: none !important; }
+
+  .animate-live-pulse {
+    animation: livePulse 2s ease-in-out infinite !important;
+    animation-duration: 2s !important;
   }
 }
 
-/* Custom scrollbars for data tables and logs */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+/* ==========================================================================
+   FORCED COLORS / HIGH CONTRAST — let the OS palette win, keep the structure.
+   ========================================================================== */
+@media (forced-colors: active) {
+  .bg-slate-900, .bg-slate-950 { background: Canvas !important; }
+  .border-slate-800, .border-slate-700 { border-color: CanvasText !important; }
 }

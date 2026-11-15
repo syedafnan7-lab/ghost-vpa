@@ -149,29 +149,71 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
         setSelectedNode(d);
       });
 
-    // Node circles with distinct color mapping
-    node.append('circle')
-      .attr('r', d => d.is_seed ? 18 : d.type === 'FEEDER_NODE' ? 16 : 13)
-      .attr('fill', d => {
-        if (d.type === 'CANARY') return '#dc2626'; // Crimson
-        if (d.type === 'FEEDER_NODE') return '#9333ea'; // Purple
-        if (d.type === 'SENDER_MULE') return '#f59e0b'; // Amber
-        if (d.type === 'DEVICE_TOKEN') return '#3b82f6'; // Blue
-        return '#10b981'; // Emerald
-      })
-      .attr('stroke', d => selectedNode?.id === d.id ? '#ffffff' : '#0f172a')
-      .attr('stroke-width', d => selectedNode?.id === d.id ? 3 : 1.5)
+    // Node identity. A force-directed graph needs the ALL-PAIRS pairlist —
+    // any two nodes can end up visually adjacent — and the dataviz reference
+    // palette documents that only its first three slots clear the CVD and
+    // normal-vision floors under that pairlist (dark: worst pair CVD dE 9.4,
+    // normal-vision 20.9). So the graph carries THREE hues and encodes the
+    // remaining two entity classes by SHAPE plus the reserved accent/ink
+    // tokens. A suspected mule deliberately gets no hue of its own: a canary
+    // tripwire raises a triage flag (REVIEW_REQUIRED), it is not a confirmed
+    // classification, and colouring it like one would overstate the evidence.
+    const NODE_HUE: Record<string, string> = {
+      DEVICE_TOKEN: '#3987e5', // slot 1 — blue
+      FEEDER_NODE:  '#d95926', // slot 2 — orange
+    };
+    const HUE_BENIGN = '#199e70'; // slot 3 — aqua
+    const HUE_CANARY = '#f59e0b'; // reserved accent, paired with hexagon form
+    const INK_TRIAGE = '#e2e8f0'; // neutral ink, paired with square form
+
+    const nodeRadius = (d: GraphNodeItem) =>
+      d.is_seed ? 18 : d.type === 'FEEDER_NODE' ? 16 : 13;
+
+    function nodeForm(d: GraphNodeItem): string {
+      const r = nodeRadius(d);
+      if (d.type === 'CANARY') {
+        // Pointy-top hexagon — the bank's own decoy, distinct by form and by
+        // the canary accent. It is also the largest node and pulses.
+        const pts = [[0, r], [-0.866 * r, 0.5 * r], [-0.866 * r, -0.5 * r],
+                     [0, -r], [0.866 * r, -0.5 * r], [0.866 * r, 0.5 * r]];
+        return `M${pts.map(p => p.join(',')).join('L')}Z`;
+      }
+      if (d.type === 'SENDER_MULE') {
+        const s = r * 0.86;
+        return `M${-s},${-s}H${s}V${s}H${-s}Z`;
+      }
+      return `M${r},0A${r},${r} 0 1,1 ${-r},0A${r},${r} 0 1,1 ${r},0Z`;
+    }
+
+    function nodeFill(d: GraphNodeItem): string {
+      if (d.type === 'CANARY') return HUE_CANARY;
+      if (d.type === 'SENDER_MULE') return INK_TRIAGE;
+      return NODE_HUE[d.type] ?? HUE_BENIGN;
+    }
+
+    // Node marks: one path per node so form and fill stay in lockstep.
+    node.append('path')
+      .attr('d', nodeForm)
+      .attr('fill', nodeFill)
+      // 2px surface ring: nodes overlap in a force layout, and the gap reads
+      // as separation without needing a lighter fill.
+      .attr('stroke', d => selectedNode?.id === d.id ? '#ffffff' : '#020617')
+      .attr('stroke-width', d => selectedNode?.id === d.id ? 3 : 2)
       .attr('class', d => d.is_seed ? 'animate-pulse' : '');
 
-    // Node labels
+    // Direct labels: seed/attention-worthy nodes only. A label on all 50
+    // nodes is unreadable; a 2px halo keeps each one legible over links.
     node.append('text')
       .text(d => {
-        if (d.id.length > 14) return d.id.slice(0, 12) + '...';
-        return d.id;
+        if (!d.is_seed && d.type !== 'CANARY' && d.type !== 'SENDER_MULE') return '';
+        return d.id.length > 14 ? d.id.slice(0, 12) + '…' : d.id;
       })
       .attr('font-size', '10px')
-      .attr('font-family', 'monospace')
-      .attr('fill', '#e2e8f0')
+      .attr('font-family', 'JetBrains Mono, ui-monospace, Menlo, monospace')
+      .attr('fill', '#cbd5e1')
+      .attr('paint-order', 'stroke')
+      .attr('stroke', '#020617')
+      .attr('stroke-width', 3)
       .attr('dx', 16)
       .attr('dy', 4);
 
@@ -280,25 +322,47 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
             </p>
           </div>
         )}
-        {/* Graph Legend & Canvas Controls */}
+        {/* Graph Legend & Canvas Controls.
+            Form as well as hue: five entity classes > the three hues a
+            force graph can safely carry, so shape carries identity too and no
+            class depends on colour alone. */}
         <div className="absolute top-4 left-4 z-10 bg-slate-950/85 backdrop-blur border border-slate-800 rounded-lg p-3 text-xs space-y-1.5 shadow-md">
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Node Legend:</span>
+
           <div className="flex items-center space-x-2">
-            <span className="w-3 h-3 rounded-full bg-red-600 inline-block" />
-            <span className="text-slate-300">Canary Honeypot</span>
+            <svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true">
+              <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill="#f59e0b" stroke="#020617" strokeWidth="1" />
+            </svg>
+            <span className="text-slate-300">Canary Honeypot <span className="text-slate-500">(bank decoy)</span></span>
           </div>
+
           <div className="flex items-center space-x-2">
-            <span className="w-3 h-3 rounded-full bg-purple-600 inline-block" />
+            <svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true">
+              <polygon points="-5,-5 5,-5 5,5 -5,5" fill="#e2e8f0" stroke="#020617" strokeWidth="1" />
+            </svg>
+            <span className="text-slate-300">Suspected Mule <span className="text-slate-500">(triage flag)</span></span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true">
+              <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill="#d95926" stroke="#020617" strokeWidth="1" />
+            </svg>
             <span className="text-slate-300">Upstream Feeder</span>
           </div>
+
           <div className="flex items-center space-x-2">
-            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
-            <span className="text-slate-300">Suspected Mule</span>
+            <span className="w-3 h-3 rounded-full bg-[#3987e5] inline-block" />
+            <span className="text-slate-300">Device Token</span>
           </div>
+
           <div className="flex items-center space-x-2">
-            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
+            <span className="w-3 h-3 rounded-full bg-[#199e70] inline-block" />
             <span className="text-slate-300">Benign Account</span>
           </div>
+
+          <p className="text-[10px] text-slate-500 leading-relaxed pt-0.5 max-w-[15rem]">
+            A suspected mule is a <span className="text-slate-400">triage flag</span>, not a confirmed finding — it carries no hue and a square form, and reads for review.
+          </p>
         </div>
 
         {/* Zoom Buttons */}

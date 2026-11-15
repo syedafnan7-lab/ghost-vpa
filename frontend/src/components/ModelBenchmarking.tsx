@@ -22,9 +22,44 @@ export const ModelBenchmarking: React.FC = () => {
   }, []);
 
   if (loading || !metrics) {
+    // Skeleton, not a sentence: the panel holds the shape of the real thing so
+    // the page doesn't reflow when data lands. The benchmark trains in the
+    // backend and can take seconds, so the sweep reads as work in progress
+    // rather than a stalled request.
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-400 text-xs">
-        Loading 100,000-node network benchmarks...
+      <div className="space-y-6" aria-busy="true" aria-live="polite">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div className="h-4 w-80 rounded bg-slate-800/60 animate-sweep" />
+          <div className="h-3 w-64 rounded bg-slate-800/40 animate-sweep mt-3" />
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-800">
+            <div className="h-3 w-56 rounded bg-slate-800/60 animate-sweep" />
+          </div>
+          <div className="p-5 space-y-3">
+            {[0, 1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="flex items-center gap-5">
+                <div className="h-3 rounded bg-slate-800/40 animate-sweep" style={{ width: `${70 - i * 5}px` }} />
+                <div className="h-3 flex-1 rounded bg-slate-800/25 animate-sweep" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[0, 1].map(i => (
+            <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+              <div className="h-3 w-48 rounded bg-slate-800/60 animate-sweep" />
+              <div className="grid grid-cols-2 gap-3">
+                {[0, 1, 2, 3].map(j => (
+                  <div key={j} className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <div className="h-2 w-16 rounded bg-slate-800/40 animate-sweep" />
+                    <div className="h-5 w-12 rounded bg-slate-800/60 animate-sweep mt-2 mx-auto" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -75,7 +110,7 @@ export const ModelBenchmarking: React.FC = () => {
                 <th className="py-3 px-5 text-slate-300">Rules Baseline</th>
                 <th className="py-3 px-5 text-amber-400">Tabular LightGBM</th>
                 <th className="py-3 px-5 text-emerald-400">Graph-Enhanced Challenger</th>
-                <th className="py-3 px-5 text-right">Empirical Improvement</th>
+                <th className="py-3 px-5 text-right">Graph vs Tabular Δ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -85,7 +120,7 @@ export const ModelBenchmarking: React.FC = () => {
                 <td className="py-3 px-5 text-amber-300 font-bold">{(tab.precision * 100).toFixed(1)}%</td>
                 <td className="py-3 px-5 text-emerald-400 font-bold">{(graph.precision * 100).toFixed(1)}%</td>
                 <td className="py-3 px-5 text-right font-sans font-bold text-emerald-400">
-                  +{metrics.precision_lift_pct}% Precision Lift
+                  {graph.precision >= tab.precision ? '+' : ''}{((graph.precision - tab.precision) * 100).toFixed(1)} pp
                 </td>
               </tr>
               <tr className="hover:bg-slate-800/30">
@@ -93,21 +128,21 @@ export const ModelBenchmarking: React.FC = () => {
                 <td className="py-3 px-5 text-slate-400">{(rules ? rules.recall * 100 : 17.2).toFixed(1)}%</td>
                 <td className="py-3 px-5 text-amber-300">{(tab.recall * 100).toFixed(1)}%</td>
                 <td className="py-3 px-5 text-emerald-400 font-bold">{(graph.recall * 100).toFixed(1)}%</td>
-                <td className="py-3 px-5 text-right font-sans text-slate-300">High Capture Rate</td>
+                <td className="py-3 px-5 text-right font-sans text-slate-300">{graph.recall >= tab.recall ? '+' : ''}{((graph.recall - tab.recall) * 100).toFixed(1)} pp</td>
               </tr>
               <tr className="hover:bg-slate-800/30">
                 <td className="py-3 px-5 font-sans font-semibold text-slate-200">PR-AUC (Area Under PR Curve)</td>
                 <td className="py-3 px-5 text-slate-400">{(rules ? rules.pr_auc : 0.035).toFixed(3)}</td>
                 <td className="py-3 px-5 text-amber-300">{tab.pr_auc.toFixed(3)}</td>
                 <td className="py-3 px-5 text-emerald-400 font-bold">{graph.pr_auc.toFixed(3)}</td>
-                <td className="py-3 px-5 text-right font-sans text-emerald-400 font-bold">Significant PR Lift</td>
+                <td className="py-3 px-5 text-right font-sans text-emerald-400">{graph.pr_auc >= tab.pr_auc ? '+' : ''}{(graph.pr_auc - tab.pr_auc).toFixed(3)}</td>
               </tr>
               <tr className="hover:bg-slate-800/30">
                 <td className="py-3 px-5 font-sans font-semibold text-slate-200">ROC-AUC</td>
                 <td className="py-3 px-5 text-slate-400">{(rules ? rules.roc_auc : 0.526).toFixed(3)}</td>
                 <td className="py-3 px-5 text-amber-300">{tab.roc_auc.toFixed(3)}</td>
                 <td className="py-3 px-5 text-emerald-400 font-bold">{graph.roc_auc.toFixed(3)}</td>
-                <td className="py-3 px-5 text-right font-sans text-emerald-400">Near-Optimal Separability</td>
+                <td className="py-3 px-5 text-right font-sans text-slate-400">{graph.roc_auc.toFixed(3)} — {graph.roc_auc >= 0.999 ? 'saturating, treat as ceiling' : 'no claim'}</td>
               </tr>
               <tr className="hover:bg-slate-800/30">
                 <td className="py-3 px-5 font-sans font-semibold text-slate-200">False-Positive Rate (FPR)</td>
@@ -115,7 +150,7 @@ export const ModelBenchmarking: React.FC = () => {
                 <td className="py-3 px-5 text-red-400">{(tab.false_positive_rate * 100).toFixed(2)}%</td>
                 <td className="py-3 px-5 text-emerald-400 font-bold">{(graph.false_positive_rate * 100).toFixed(2)}%</td>
                 <td className="py-3 px-5 text-right font-sans font-bold text-emerald-400">
-                  -{metrics.fpr_reduction_pct}% Fewer Innocent Freezes
+                  {((tab.false_positive_rate - graph.false_positive_rate) * 100).toFixed(2)} pp lower FPR
                 </td>
               </tr>
               <tr className="hover:bg-slate-800/30">
@@ -123,14 +158,18 @@ export const ModelBenchmarking: React.FC = () => {
                 <td className="py-3 px-5 text-slate-400">{(rules ? rules.p50_latency_ms : 0.0085).toFixed(4)} ms</td>
                 <td className="py-3 px-5 text-slate-300">{tab.p50_latency_ms.toFixed(4)} ms</td>
                 <td className="py-3 px-5 text-slate-300">{graph.p50_latency_ms.toFixed(4)} ms</td>
-                <td className="py-3 px-5 text-right font-sans text-emerald-400 font-semibold">&lt; 15 ms SLA Satisfied</td>
+                <td className={`py-3 px-5 text-right font-sans font-semibold ${graph.p50_latency_ms < 15 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {graph.p50_latency_ms < 15 ? 'within 15 ms budget' : 'exceeds 15 ms budget'}
+                </td>
               </tr>
               <tr className="hover:bg-slate-800/30">
                 <td className="py-3 px-5 font-sans font-semibold text-slate-200">Inference Latency (p99)</td>
                 <td className="py-3 px-5 text-slate-400">{(rules ? (rules.p99_latency_ms || 0.0127) : 0.0127).toFixed(4)} ms</td>
                 <td className="py-3 px-5 text-slate-300">{(tab.p99_latency_ms || tab.p95_latency_ms).toFixed(4)} ms</td>
                 <td className="py-3 px-5 text-slate-300">{(graph.p99_latency_ms || graph.p95_latency_ms).toFixed(4)} ms</td>
-                <td className="py-3 px-5 text-right font-sans text-emerald-400 font-semibold">&lt; 15 ms SLA Satisfied</td>
+                <td className={`py-3 px-5 text-right font-sans font-semibold ${(graph.p99_latency_ms || graph.p95_latency_ms) < 15 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {(graph.p99_latency_ms || graph.p95_latency_ms) < 15 ? 'within 15 ms budget' : 'exceeds 15 ms budget'}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -154,9 +193,9 @@ export const ModelBenchmarking: React.FC = () => {
               <span className="text-[10px] text-red-400 uppercase font-bold block">False Positive (Innocents):</span>
               <span className="text-lg font-bold text-red-400">{tab.confusion_matrix.false_positive}</span>
             </div>
-            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase font-bold block">False Negative (Missed Mules):</span>
-              <span className="text-lg font-bold text-slate-400">{tab.confusion_matrix.false_negative}</span>
+            <div className="bg-slate-950 p-3 rounded-lg border border-red-900/30">
+              <span className="text-[10px] text-red-400 uppercase font-bold block">False Negative (Missed Mules):</span>
+              <span className="text-lg font-bold text-red-400">{tab.confusion_matrix.false_negative}</span>
             </div>
             <div className="bg-slate-950 p-3 rounded-lg border border-emerald-900/30">
               <span className="text-[10px] text-emerald-400 uppercase font-bold block">True Positive (Mules):</span>
@@ -176,13 +215,13 @@ export const ModelBenchmarking: React.FC = () => {
               <span className="text-[10px] text-slate-500 uppercase font-bold block">True Negative:</span>
               <span className="text-lg font-bold text-slate-200">{graph.confusion_matrix.true_negative}</span>
             </div>
-            <div className="bg-slate-950 p-3 rounded-lg border border-emerald-900/30">
-              <span className="text-[10px] text-emerald-400 uppercase font-bold block">False Positive (Innocents):</span>
-              <span className="text-lg font-bold text-emerald-400">{graph.confusion_matrix.false_positive}</span>
+            <div className="bg-slate-950 p-3 rounded-lg border border-red-900/30">
+              <span className="text-[10px] text-red-400 uppercase font-bold block">False Positive (Innocents):</span>
+              <span className="text-lg font-bold text-red-400">{graph.confusion_matrix.false_positive}</span>
             </div>
-            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase font-bold block">False Negative (Missed Mules):</span>
-              <span className="text-lg font-bold text-slate-400">{graph.confusion_matrix.false_negative}</span>
+            <div className="bg-slate-950 p-3 rounded-lg border border-red-900/30">
+              <span className="text-[10px] text-red-400 uppercase font-bold block">False Negative (Missed Mules):</span>
+              <span className="text-lg font-bold text-red-400">{graph.confusion_matrix.false_negative}</span>
             </div>
             <div className="bg-slate-950 p-3 rounded-lg border border-emerald-900/30">
               <span className="text-[10px] text-emerald-400 uppercase font-bold block">True Positive (Mules):</span>
@@ -210,9 +249,11 @@ export const ModelBenchmarking: React.FC = () => {
                   <span className="text-amber-400 font-bold">{weight}</span>
                 </div>
                 <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+                  {/* One hue for a one-series magnitude bar — no status ramp,
+                      and a 2px surface gap at the rounded data-end. */}
                   <div
-                    className="bg-gradient-to-r from-amber-500 to-emerald-400 h-full rounded-full"
-                    style={{ width: `${Math.min(100, (weight / maxWeight) * 100)}%` }}
+                    className="h-full rounded-full bg-amber-500"
+                    style={{ width: `calc(${Math.min(100, (weight / maxWeight) * 100)}% - 2px)` }}
                   />
                 </div>
               </div>

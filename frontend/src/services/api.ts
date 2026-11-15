@@ -79,5 +79,21 @@ export const api = {
   getAuditLogs: async (): Promise<AuditLog[]> => {
     const res = await fetch(`${API_BASE}/audit`);
     return res.json();
+  },
+  verifyAuditChain: async (): Promise<ChainVerification> => {
+    const res = await fetch(`${API_BASE}/audit/verify`);
+    return res.json();
   }
 };
+
+export interface ChainVerification {
+  chain_intact: boolean;
+  verified_blocks: number;
+  broken_block: {
+    log_id: string;
+    reason: string;
+    expected: string;
+    actual: string;
+  } | null;
+  tip_hash?: string;
+}

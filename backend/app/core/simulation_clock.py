@@ -3,7 +3,11 @@ import threading
 
 class SimulationClock:
     _instance = None
-    _lock = threading.Lock()
+    # RLock (not Lock): the public mutators below call self.now() to flush elapsed
+    # wall-clock time while still holding the lock. With a plain Lock this is a
+    # self-deadlock that freezes the calling thread (and the asyncio event loop,
+    # since FastAPI handlers invoke these from the loop thread).
+    _lock = threading.RLock()
 
     def __new__(cls):
         with cls._lock:

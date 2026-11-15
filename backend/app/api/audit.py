@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.db.session import get_db
 from backend.app.db.models import AuditLogModel
+from backend.app.core.audit_logger import audit_logger
 from backend.app.schemas.audit import AuditLogEntry
 
 router = APIRouter(prefix="/api/v1/audit", tags=["Security & Audit Logs"])
@@ -28,3 +29,13 @@ async def list_audit_logs(db: AsyncSession = Depends(get_db)):
         )
         for l in logs
     ]
+
+
+@router.get("/verify")
+async def verify_audit_chain(db: AsyncSession = Depends(get_db)):
+    """Recompute every block hash and confirm the chain links are unbroken.
+
+    Exposed so the UI can show a verification result that was actually
+    computed, instead of a hardcoded "intact" badge.
+    """
+    return await audit_logger.verify_chain(db)
