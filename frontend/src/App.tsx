@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
+import { CanaryBackground } from './components/CanaryBackground';
 import { OperationsDashboard } from './components/OperationsDashboard';
 import { LiveEventMonitor } from './components/LiveEventMonitor';
 import { NetworkExplorer } from './components/NetworkExplorer';
@@ -94,6 +95,30 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // Keyboard navigation shortcuts (1-7 for tabs)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input or textarea
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      const tabKeys: Record<string, ActiveTab> = {
+        '1': 'operations',
+        '2': 'monitor',
+        '3': 'network',
+        '4': 'workbench',
+        '5': 'canaries',
+        '6': 'benchmarks',
+        '7': 'audit',
+      };
+      if (tabKeys[e.key]) {
+        setActiveTab(tabKeys[e.key]);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleTogglePlay = async () => {
     try {
       await api.controlSim(isPaused ? 'resume' : 'pause');
@@ -129,82 +154,94 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-void text-ink flex flex-col font-sans selection:bg-canary selection:text-void">
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        role={role}
-        setRole={setRole}
-        isPaused={isPaused}
-        speed={speed}
-        simTime={simTime}
-        onTogglePlay={handleTogglePlay}
-        onSetSpeed={handleSetSpeed}
-        onRunScenario={handleRunScenario}
-      />
+    <div className="relative min-h-screen bg-void text-ink flex flex-col font-sans selection:bg-canary selection:text-void overflow-x-hidden">
+      {/* Living Dynamic Background (Canary constellation field with gentle mouse parallax) */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-40">
+        <CanaryBackground activeTab={activeTab} />
+      </div>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
-        {activeTab === 'operations' && (
-          <OperationsDashboard
-            canaries={canaries}
-            cases={cases}
-            alerts={alerts}
-            setActiveTab={setActiveTab}
-            onRunScenario={handleRunScenario}
-          />
-        )}
+      {/* Main Foreground Interface */}
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          role={role}
+          setRole={setRole}
+          isPaused={isPaused}
+          speed={speed}
+          simTime={simTime}
+          onTogglePlay={handleTogglePlay}
+          onSetSpeed={handleSetSpeed}
+          onRunScenario={handleRunScenario}
+        />
 
-        {activeTab === 'monitor' && (
-          <LiveEventMonitor
-            events={events}
-            alerts={alerts}
-            setActiveTab={setActiveTab}
-            onSelectEntityForGraph={(id) => {
-              setFocalGraphEntity(id);
-              setActiveTab('network');
-            }}
-          />
-        )}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 transition-all duration-normal ease-out">
+          <div key={activeTab} className="animate-fade-in">
+            {activeTab === 'operations' && (
+              <OperationsDashboard
+                canaries={canaries}
+                cases={cases}
+                alerts={alerts}
+                setActiveTab={setActiveTab}
+                onRunScenario={handleRunScenario}
+              />
+            )}
 
-        {activeTab === 'network' && (
-          <NetworkExplorer
-            initialEntityId={focalGraphEntity}
-            setActiveTab={setActiveTab}
-          />
-        )}
+            {activeTab === 'monitor' && (
+              <LiveEventMonitor
+                events={events}
+                alerts={alerts}
+                setActiveTab={setActiveTab}
+                onSelectEntityForGraph={(id) => {
+                  setFocalGraphEntity(id);
+                  setActiveTab('network');
+                }}
+              />
+            )}
 
-        {activeTab === 'workbench' && (
-          <InvestigationWorkbench
-            cases={cases}
-            role={role}
-            onRefreshCases={refreshCases}
-          />
-        )}
+            {activeTab === 'network' && (
+              <NetworkExplorer
+                initialEntityId={focalGraphEntity}
+                setActiveTab={setActiveTab}
+              />
+            )}
 
-        {activeTab === 'canaries' && (
-          <HoneypotRegistry
-            canaries={canaries}
-            onRefreshCanaries={refreshCanaries}
-          />
-        )}
+            {activeTab === 'workbench' && (
+              <InvestigationWorkbench
+                cases={cases}
+                role={role}
+                onRefreshCases={refreshCases}
+              />
+            )}
 
-        {activeTab === 'benchmarks' && <ModelBenchmarking />}
+            {activeTab === 'canaries' && (
+              <HoneypotRegistry
+                canaries={canaries}
+                onRefreshCanaries={refreshCanaries}
+              />
+            )}
 
-        {activeTab === 'audit' && <SecurityAuditLogs />}
-      </main>
+            {activeTab === 'benchmarks' && <ModelBenchmarking />}
 
-      <footer className="border-t border-line bg-void/90 py-4 px-6 text-center text-caption font-mono text-ink3">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-display font-medium text-ink2">Ghost-VPA</span>
-            <span>•</span>
-            <span>St Aloysius × RBIH FinTech Innovation Hackathon 2026</span>
+            {activeTab === 'audit' && <SecurityAuditLogs />}
           </div>
-          <span className="text-micro text-ink3">
-            Zero Real Funds Movement • Pure Synthetic Regulatory Simulation Rail
-          </span>
-        </div>
-      </footer>
+        </main>
+
+        <footer className="border-t border-line bg-void/80 backdrop-blur-md py-4 px-6 text-center text-caption font-mono text-ink3">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-display font-medium text-ink2">Ghost-VPA</span>
+              <span>•</span>
+              <span>Bank-Controlled Cyber-Deception Fraud Intelligence</span>
+            </div>
+            <div className="flex items-center gap-3 text-micro text-ink3">
+              <span>Press <kbd className="px-1.5 py-0.5 rounded bg-raised border border-line text-ink2">1</kbd>–<kbd className="px-1.5 py-0.5 rounded bg-raised border border-line text-ink2">7</kbd> to switch tabs</span>
+              <span>•</span>
+              <span className="text-canary font-semibold">Zero Real Funds Moved</span>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };
