@@ -248,32 +248,32 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
   return (
     <div className="space-y-4">
       {/* Search & Control Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center space-x-2 w-full md:w-auto">
+      <div className="bg-panel border border-line rounded-panel p-3.5 flex flex-col md:flex-row items-center justify-between gap-3 shadow-panel">
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-80">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-ink3 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Focal Entity ID (e.g. ACCT_SYNTH_HDFX_9912)..."
               value={focalId}
               onChange={(e) => setFocalId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && fetchGraph(focalId, depth, temporalWindowHours)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+              className="w-full bg-void/80 border border-line rounded-chip pl-8 pr-3 py-1.5 text-caption text-ink placeholder-ink3 focus:outline-none focus:border-canary font-mono transition-colors"
             />
           </div>
           <button
             onClick={() => fetchGraph(focalId, depth, temporalWindowHours)}
             disabled={loading}
-            className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition"
+            className="px-3.5 py-1.5 bg-canary hover:bg-canary/90 text-void text-caption font-mono font-bold rounded-chip transition-colors shadow-sm disabled:opacity-50"
           >
             {loading ? 'Tracing...' : 'Trace Graph'}
           </button>
         </div>
 
         {/* Depth & Temporal Slider */}
-        <div className="flex items-center space-x-4 w-full md:w-auto justify-end">
-          <div className="flex items-center space-x-2 text-xs">
-            <span className="text-slate-400">Hop Depth:</span>
+        <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-1.5 text-caption font-mono">
+            <span className="text-ink3 text-micro">Hop Depth:</span>
             {[1, 2, 3].map((d) => (
               <button
                 key={d}
@@ -281,8 +281,8 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
                   setDepth(d);
                   fetchGraph(focalId, d, temporalWindowHours);
                 }}
-                className={`px-2 py-0.5 rounded text-xs font-mono transition ${
-                  depth === d ? 'bg-slate-700 text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+                className={`px-2 py-0.5 rounded-chip text-caption font-mono transition-colors ${
+                  depth === d ? 'bg-raised text-canary border border-canary/40 font-bold' : 'text-ink3 hover:text-ink bg-void/60 border border-line'
                 }`}
               >
                 {d}
@@ -290,9 +290,9 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
             ))}
           </div>
 
-          <div className="flex items-center space-x-2 text-xs border-l border-slate-800 pl-4">
-            <span className="text-slate-400">Sliding Window:</span>
-            <span className="text-amber-400 font-mono font-semibold">{temporalWindowHours}h</span>
+          <div className="flex items-center gap-2 text-caption font-mono border-l border-line pl-4">
+            <span className="text-ink3 text-micro">Sliding Window:</span>
+            <span className="text-canary font-semibold">{temporalWindowHours}h</span>
             <input
               type="range"
               min="12"
@@ -304,115 +304,113 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
                 setTemporalWindowHours(val);
                 fetchGraph(focalId, depth, val);
               }}
-              className="w-20 accent-amber-500 cursor-pointer"
+              className="w-20 accent-canary cursor-pointer"
             />
           </div>
         </div>
       </div>
 
       {/* Main Canvas + Evidence Drawer Container */}
-      <div className="relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm h-[580px] flex">
+      <div className="relative bg-panel border border-line rounded-panel overflow-hidden shadow-panel h-[580px] flex">
         {/* Empty temporal window banner */}
         {graphData && graphData.edges.length === 0 && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center bg-slate-950/90 border border-slate-800 rounded-xl p-4 shadow-xl z-20 max-w-sm">
-            <Layers className="w-7 h-7 text-amber-400 mx-auto mb-2 opacity-80" />
-            <p className="text-xs font-semibold text-slate-200">No Active Edges within {temporalWindowHours}h Window</p>
-            <p className="text-[11px] text-slate-400 mt-1">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center bg-void/95 border border-line-strong rounded-panel p-5 shadow-panel z-20 max-w-sm">
+            <Layers className="w-7 h-7 text-canary mx-auto mb-2 opacity-80" />
+            <p className="font-display font-medium text-ink text-caption">No Active Edges within {temporalWindowHours}h Window</p>
+            <p className="font-sans text-micro text-ink3 mt-1 leading-relaxed">
               Transactions for {focalId} fall outside this time range. Expand the slider (48h/72h) to view historical links.
             </p>
           </div>
         )}
-        {/* Graph Legend & Canvas Controls.
-            Form as well as hue: five entity classes > the three hues a
-            force graph can safely carry, so shape carries identity too and no
-            class depends on colour alone. */}
-        <div className="absolute top-4 left-4 z-10 bg-slate-950/85 backdrop-blur border border-slate-800 rounded-lg p-3 text-xs space-y-1.5 shadow-md">
-          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Node Legend:</span>
 
-          <div className="flex items-center space-x-2">
+        {/* Graph Legend & Canvas Controls */}
+        <div className="absolute top-4 left-4 z-10 bg-void/90 backdrop-blur-md border border-line rounded-card p-3 text-caption font-mono space-y-1.5 shadow-panel">
+          <span className="text-micro uppercase font-bold text-ink3 tracking-wider block">Node Legend:</span>
+
+          <div className="flex items-center gap-2">
             <svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true">
-              <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill="#f59e0b" stroke="#020617" strokeWidth="1" />
+              <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill="#F5A524" stroke="#04070C" strokeWidth="1" />
             </svg>
-            <span className="text-slate-300">Canary Honeypot <span className="text-slate-500">(bank decoy)</span></span>
+            <span className="text-ink">Canary Honeypot <span className="text-ink3">(decoy)</span></span>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true">
-              <polygon points="-5,-5 5,-5 5,5 -5,5" fill="#e2e8f0" stroke="#020617" strokeWidth="1" />
+              <polygon points="-5,-5 5,-5 5,5 -5,5" fill="#E8EEF7" stroke="#04070C" strokeWidth="1" />
             </svg>
-            <span className="text-slate-300">Suspected Mule <span className="text-slate-500">(triage flag)</span></span>
+            <span className="text-ink">Suspected Mule <span className="text-ink3">(triage flag)</span></span>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true">
-              <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill="#d95926" stroke="#020617" strokeWidth="1" />
+              <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill="#A78BFA" stroke="#04070C" strokeWidth="1" />
             </svg>
-            <span className="text-slate-300">Upstream Feeder</span>
+            <span className="text-ink">Upstream Feeder</span>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="w-3 h-3 rounded-full bg-[#3987e5] inline-block" />
-            <span className="text-slate-300">Device Token</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#38BDF8] inline-block" />
+            <span className="text-ink">Device Token</span>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="w-3 h-3 rounded-full bg-[#199e70] inline-block" />
-            <span className="text-slate-300">Benign Account</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#2DD4A7] inline-block" />
+            <span className="text-ink">Benign Account</span>
           </div>
 
-          <p className="text-[10px] text-slate-500 leading-relaxed pt-0.5 max-w-[15rem]">
-            A suspected mule is a <span className="text-slate-400">triage flag</span>, not a confirmed finding — it carries no hue and a square form, and reads for review.
+          <p className="text-[10px] text-ink3 leading-relaxed pt-0.5 max-w-[15rem] font-sans">
+            A suspected mule is a <span className="text-canary font-semibold">triage flag</span>, not a confirmed finding — it carries square form and neutral ink for review.
           </p>
         </div>
 
         {/* Zoom Buttons */}
-        <div className="absolute bottom-4 left-4 z-10 flex items-center space-x-1.5 bg-slate-950/80 p-1.5 rounded-lg border border-slate-800">
-          <button onClick={() => handleZoom(1.2)} className="p-1 hover:bg-slate-800 rounded text-slate-300">
+        <div className="absolute bottom-4 left-4 z-10 flex items-center gap-1 bg-void/90 backdrop-blur-md p-1 rounded-chip border border-line">
+          <button onClick={() => handleZoom(1.2)} className="p-1 hover:bg-raised rounded text-ink2 hover:text-ink transition-colors" title="Zoom In">
             <ZoomIn className="w-4 h-4" />
           </button>
-          <button onClick={() => handleZoom(0.8)} className="p-1 hover:bg-slate-800 rounded text-slate-300">
+          <button onClick={() => handleZoom(0.8)} className="p-1 hover:bg-raised rounded text-ink2 hover:text-ink transition-colors" title="Zoom Out">
             <ZoomOut className="w-4 h-4" />
           </button>
-          <button onClick={handleResetZoom} className="p-1 hover:bg-slate-800 rounded text-slate-300">
+          <button onClick={handleResetZoom} className="p-1 hover:bg-raised rounded text-ink2 hover:text-ink transition-colors" title="Reset View">
             <RotateCcw className="w-4 h-4" />
           </button>
         </div>
 
         {/* D3 SVG Canvas */}
-        <svg ref={svgRef} className="w-full h-full bg-slate-950" />
+        <svg ref={svgRef} className="w-full h-full bg-void" />
 
         {/* Evidence Drawer (Right Panel) */}
         {selectedNode && (
-          <div className="w-80 bg-slate-900 border-l border-slate-800 p-5 overflow-y-auto z-20 flex flex-col justify-between">
+          <div className="w-80 bg-panel border-l border-line p-5 overflow-y-auto z-20 flex flex-col justify-between shadow-panel">
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center space-x-2">
-                  <ShieldAlert className="w-4 h-4 text-amber-400" />
-                  <h4 className="font-semibold text-slate-200 text-xs">Entity Forensic Dossier</h4>
+              <div className="flex items-center justify-between border-b border-line pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-canary" />
+                  <h4 className="font-display font-medium text-ink text-caption">Entity Forensic Dossier</h4>
                 </div>
-                <button onClick={() => setSelectedNode(null)} className="text-slate-500 hover:text-slate-300">
+                <button onClick={() => setSelectedNode(null)} className="text-ink3 hover:text-ink transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div>
-                <span className="text-[11px] text-slate-400 uppercase font-semibold">Entity ID:</span>
-                <div className="font-mono text-sm font-bold text-amber-300 break-all">{selectedNode.id}</div>
-                <div className="text-xs text-slate-400 font-mono mt-0.5">Classification: <strong className="text-slate-200">{selectedNode.type}</strong></div>
+                <span className="font-mono text-micro text-ink3 uppercase font-semibold">Entity ID:</span>
+                <div className="font-mono text-caption font-bold text-canary break-all mt-0.5">{selectedNode.id}</div>
+                <div className="font-mono text-micro text-ink3 mt-0.5">Classification: <strong className="text-ink">{selectedNode.type}</strong></div>
               </div>
 
               {/* CS-LP Risk Score Gauge */}
-              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Canary-Seeded Risk (CS-LP):</span>
-                  <span className={`font-mono font-bold ${selectedNode.risk_score > 0.7 ? 'text-red-400' : 'text-emerald-400'}`}>
+              <div className="bg-void/70 p-3 rounded-card border border-line space-y-2">
+                <div className="flex items-center justify-between text-caption font-mono">
+                  <span className="text-ink3 text-micro">Canary-Seeded Risk (CS-LP):</span>
+                  <span className={`font-bold ${selectedNode.risk_score > 0.7 ? 'text-alarm' : 'text-benign'}`}>
                     {(selectedNode.risk_score * 100).toFixed(1)}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-void rounded-chip h-2 overflow-hidden border border-line">
                   <div
                     className={`h-full transition-all duration-500 ${
-                      selectedNode.risk_score > 0.7 ? 'bg-red-500' : 'bg-emerald-500'
+                      selectedNode.risk_score > 0.7 ? 'bg-alarm' : 'bg-benign'
                     }`}
                     style={{ width: `${Math.min(100, selectedNode.risk_score * 100)}%` }}
                   />
@@ -420,28 +418,28 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
               </div>
 
               {/* Degrees & Linkage */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                  <span className="text-slate-500 text-[10px] uppercase font-bold">In-Degree:</span>
-                  <div className="text-lg font-bold font-mono text-slate-200">{selectedNode.in_degree}</div>
+              <div className="grid grid-cols-2 gap-2 text-caption font-mono">
+                <div className="bg-void/70 p-2.5 rounded-card border border-line">
+                  <span className="text-ink3 text-[10px] uppercase font-bold block">In-Degree:</span>
+                  <div className="text-base font-bold text-ink">{selectedNode.in_degree}</div>
                 </div>
-                <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                  <span className="text-slate-500 text-[10px] uppercase font-bold">Out-Degree:</span>
-                  <div className="text-lg font-bold font-mono text-slate-200">{selectedNode.out_degree}</div>
+                <div className="bg-void/70 p-2.5 rounded-card border border-line">
+                  <span className="text-ink3 text-[10px] uppercase font-bold block">Out-Degree:</span>
+                  <div className="text-base font-bold text-ink">{selectedNode.out_degree}</div>
                 </div>
               </div>
 
               {/* Detected Motifs */}
               {graphData?.detected_motifs && graphData.detected_motifs.length > 0 && (
                 <div className="space-y-1.5">
-                  <span className="text-[11px] text-slate-400 uppercase font-semibold flex items-center space-x-1">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="font-mono text-micro text-ink3 uppercase font-semibold flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 text-canary" />
                     <span>Detected Temporal Motifs:</span>
                   </span>
                   {graphData.detected_motifs.map((m, idx) => (
-                    <div key={idx} className="bg-amber-950/30 border border-amber-800/40 p-2.5 rounded text-xs text-amber-200">
-                      <strong className="block text-[10px] text-amber-400 uppercase">{m.type}</strong>
-                      <p className="text-[11px] mt-0.5 leading-relaxed">{m.description}</p>
+                    <div key={idx} className="bg-canary/10 border border-canary/30 p-2.5 rounded-card text-caption text-ink">
+                      <strong className="block font-mono text-micro text-canary uppercase">{m.type}</strong>
+                      <p className="font-sans text-micro text-ink2 mt-0.5 leading-relaxed">{m.description}</p>
                     </div>
                   ))}
                 </div>
@@ -450,7 +448,7 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
 
             <button
               onClick={() => setActiveTab('workbench')}
-              className="mt-4 w-full py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition flex items-center justify-center space-x-1"
+              className="mt-4 w-full py-2 bg-canary hover:bg-canary/90 text-void text-caption font-mono font-bold rounded-chip transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               <span>Manage in Workbench</span>
               <ExternalLink className="w-3.5 h-3.5" />

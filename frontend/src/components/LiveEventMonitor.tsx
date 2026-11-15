@@ -36,41 +36,41 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
 
   return (
     <div className="space-y-5">
-      {/* Active Tripwire Alert Toasts */}
+      {/* Active Tripwire Alert Toast / Banner */}
       {alerts.length > 0 && (
-        <div className="bg-red-950/40 border border-red-500/40 rounded-xl p-4 shadow-lg shadow-red-950/20">
-          <div className="flex items-center space-x-2 text-red-400 font-semibold text-xs uppercase tracking-wider mb-2">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+        <div className="bg-panel border border-alarm/40 rounded-panel p-4 shadow-panel">
+          <div className="flex items-center gap-2 text-alarm font-mono text-micro uppercase tracking-wider mb-2 font-semibold">
+            <span className="w-2 h-2 rounded-full bg-alarm animate-ping" />
             <span>Latest Canary Tripwire Interception:</span>
           </div>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-950/80 p-3 rounded-lg border border-red-800/30">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-red-500/20 text-red-400 rounded-lg">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-void/80 p-3 rounded-card border border-alarm/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-alarm/10 text-alarm rounded-chip">
                 <ShieldAlert className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-mono text-xs font-bold text-slate-100">{alerts[0].sender_account_id}</span>
-                  <span className="text-xs text-slate-400 font-mono">({alerts[0].sender_vpa})</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-red-400" />
-                  <span className="font-mono text-xs font-bold text-amber-300">{alerts[0].canary_vpa}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-caption font-bold text-ink">{alerts[0].sender_account_id}</span>
+                  <span className="text-micro text-ink3 font-mono">({alerts[0].sender_vpa})</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-alarm" />
+                  <span className="font-mono text-caption font-bold text-canary">{alerts[0].canary_vpa}</span>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-0.5 flex items-center space-x-3">
-                  <span>Amount: <strong className="text-slate-200">₹{alerts[0].amount_inr.toLocaleString()}</strong></span>
+                <div className="text-micro font-mono text-ink3 mt-0.5 flex items-center gap-3">
+                  <span>Amount: <strong className="text-ink">₹{alerts[0].amount_inr.toLocaleString()}</strong></span>
                   <span>•</span>
-                  <span>Sender Status: <strong className="text-amber-400">REVIEW_REQUIRED</strong></span>
+                  <span>Sender Status: <strong className="text-canary">REVIEW_REQUIRED</strong></span>
                   <span>•</span>
-                  <span className="text-emerald-400 font-semibold">Zero Funds Transferred (Ring-Fenced)</span>
+                  <span className="text-benign font-semibold">Zero Funds Transferred (Ring-Fenced)</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => {
                   onSelectEntityForGraph(alerts[0].sender_account_id);
                   setActiveTab('network');
                 }}
-                className="px-3 py-1.5 bg-amber-500 text-black hover:bg-amber-400 text-xs font-bold rounded-lg transition flex items-center space-x-1"
+                className="px-3 py-1.5 bg-canary text-void hover:bg-canary/90 text-caption font-mono font-bold rounded-chip transition flex items-center gap-1.5 shadow-sm"
               >
                 <span>Inspect in Graph</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -81,26 +81,26 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
       )}
 
       {/* Control Bar: Filters & Search */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center space-x-2 w-full md:w-auto">
+      <div className="bg-panel border border-line rounded-panel p-3.5 flex flex-col md:flex-row items-center justify-between gap-3 shadow-panel">
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-72">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-ink3 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search by Account, VPA, or Tx ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+              className="w-full bg-void/80 border border-line rounded-chip pl-8 pr-3 py-1.5 text-caption font-mono text-ink placeholder-ink3 focus:outline-none focus:border-canary transition-colors"
             />
           </div>
 
           {/* Canary Only Toggle */}
           <button
             onClick={() => setCanaryOnly(!canaryOnly)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+            className={`px-3 py-1.5 rounded-chip text-caption font-mono border transition ${
               canaryOnly
-                ? 'bg-red-500/20 text-red-300 border-red-500/40 font-bold'
-                : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                ? 'bg-alarm/15 text-alarm border-alarm/40 font-semibold'
+                : 'bg-void/80 text-ink2 border-line hover:text-ink hover:bg-raised'
             }`}
           >
             Canary Hits Only
@@ -108,16 +108,16 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
         </div>
 
         {/* Bank Filter Pills */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto w-full md:w-auto justify-end">
-          <span className="text-[11px] text-slate-500 uppercase font-semibold mr-1">Bank:</span>
+        <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto justify-end">
+          <span className="text-micro font-mono text-ink3 uppercase tracking-wider mr-1">Bank:</span>
           {['ALL', 'HDFX', 'ICIX', 'SBINX', 'AXSX'].map((b) => (
             <button
               key={b}
               onClick={() => setBankFilter(b)}
-              className={`px-2.5 py-1 rounded text-xs font-mono transition ${
+              className={`px-2.5 py-1 rounded-chip text-caption font-mono transition ${
                 bankFilter === b
-                  ? 'bg-slate-800 text-amber-400 border border-slate-700 font-bold'
-                  : 'text-slate-400 hover:text-slate-200 bg-slate-950 border border-slate-900'
+                  ? 'bg-raised text-canary border border-canary/40 font-bold'
+                  : 'text-ink3 hover:text-ink bg-void/60 border border-line'
               }`}
             >
               {b}
@@ -127,38 +127,38 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
       </div>
 
       {/* Real-time Ingestion Stream Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-5 py-3 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/50">
-          <div className="flex items-center space-x-2">
-            <Zap className="w-4 h-4 text-amber-400" />
-            <h3 className="font-semibold text-slate-200 text-xs">Simulated UPI / IMPS Inbound Stream</h3>
-            <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full font-mono">
-              {filteredEvents.length} transactions
+      <div className="bg-panel border border-line rounded-panel overflow-hidden shadow-panel">
+        <div className="px-5 py-3 border-b border-line flex items-center justify-between bg-panel">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-canary" />
+            <h3 className="font-display font-medium text-ink text-caption">Simulated UPI / IMPS Inbound Stream</h3>
+            <span className="text-micro text-ink3 bg-raised px-2 py-0.5 rounded-chip font-mono border border-line">
+              {filteredEvents.length} events
             </span>
           </div>
-          <span className="text-[11px] text-slate-400">
-            Real-time Ingestion SLA: <strong className="text-emerald-400">&lt; 15 ms</strong>
+          <span className="font-mono text-micro text-ink3">
+            Real-time Ingestion SLA: <strong className="text-benign">&lt; 15 ms</strong>
           </span>
         </div>
 
         <div className="overflow-x-auto max-h-[520px]">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-slate-950/80 sticky top-0 border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+          <table className="w-full text-left border-collapse text-caption">
+            <thead className="bg-void/90 sticky top-0 border-b border-line text-ink3 font-mono text-micro">
               <tr>
-                <th className="py-2.5 px-4">Event ID</th>
-                <th className="py-2.5 px-4">Timestamp</th>
-                <th className="py-2.5 px-4">Sender Account</th>
-                <th className="py-2.5 px-4">Beneficiary VPA</th>
-                <th className="py-2.5 px-4">Amount</th>
-                <th className="py-2.5 px-4">Rail</th>
-                <th className="py-2.5 px-4">Triage Status</th>
-                <th className="py-2.5 px-4 text-right">Actions</th>
+                <th className="py-2.5 px-4 font-normal">Event ID</th>
+                <th className="py-2.5 px-4 font-normal">Timestamp</th>
+                <th className="py-2.5 px-4 font-normal">Sender Account</th>
+                <th className="py-2.5 px-4 font-normal">Beneficiary VPA</th>
+                <th className="py-2.5 px-4 font-normal">Amount</th>
+                <th className="py-2.5 px-4 font-normal">Rail</th>
+                <th className="py-2.5 px-4 font-normal">Triage Status</th>
+                <th className="py-2.5 px-4 text-right font-normal">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono">
+            <tbody className="divide-y divide-line/60 font-mono text-micro">
               {filteredEvents.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500 font-sans">
+                  <td colSpan={8} className="py-10 text-center text-ink3 font-sans">
                     No payment attempts matched your filter criteria.
                   </td>
                 </tr>
@@ -168,41 +168,41 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
                   return (
                     <tr
                       key={ev.event_id}
-                      className={`hover:bg-slate-800/50 transition ${
-                        isCanary ? 'bg-red-950/20 hover:bg-red-950/30' : ''
+                      className={`hover:bg-raised/40 transition-colors ${
+                        isCanary ? 'bg-alarm/5 hover:bg-alarm/10' : ''
                       }`}
                     >
-                      <td className="py-2.5 px-4 text-slate-400 font-bold">{ev.event_id}</td>
-                      <td className="py-2.5 px-4 text-slate-400">
+                      <td className="py-2.5 px-4 text-ink3 font-semibold">{ev.event_id}</td>
+                      <td className="py-2.5 px-4 text-ink3">
                         {new Date(ev.timestamp).toLocaleTimeString()}
                       </td>
                       <td className="py-2.5 px-4">
-                        <span className={isCanary ? 'text-red-400 font-bold' : 'text-slate-300'}>
+                        <span className={isCanary ? 'text-alarm font-bold' : 'text-ink'}>
                           {ev.sender_account_id}
                         </span>
-                        <div className="text-[10px] text-slate-500">{ev.sender_vpa}</div>
+                        <div className="text-[10px] text-ink3">{ev.sender_vpa}</div>
                       </td>
                       <td className="py-2.5 px-4">
-                        <span className={isCanary ? 'text-amber-400 font-bold' : 'text-slate-300'}>
+                        <span className={isCanary ? 'text-canary font-bold' : 'text-ink2'}>
                           {ev.beneficiary_vpa}
                         </span>
                         {isCanary && (
-                          <span className="ml-1.5 px-1.5 py-0.2 text-[9px] bg-red-500/20 text-red-400 rounded border border-red-500/30">
+                          <span className="ml-1.5 px-1.5 py-0.5 text-[9px] bg-alarm/20 text-alarm rounded-chip border border-alarm/30">
                             CANARY
                           </span>
                         )}
                       </td>
-                      <td className="py-2.5 px-4 text-slate-200 font-bold">
+                      <td className="py-2.5 px-4 text-ink font-bold tabular-nums">
                         ₹{ev.amount_inr.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-4 text-slate-400">{ev.payment_rail}</td>
+                      <td className="py-2.5 px-4 text-ink3">{ev.payment_rail}</td>
                       <td className="py-2.5 px-4 font-sans">
                         {isCanary ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          <span className="px-2 py-0.5 rounded-chip text-micro font-mono font-bold bg-canary/15 text-canary border border-canary/30">
                             REVIEW_REQUIRED
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="px-2 py-0.5 rounded-chip text-micro font-mono font-medium bg-benign/10 text-benign border border-benign/20">
                             SETTLED
                           </span>
                         )}
@@ -213,7 +213,7 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
                             onSelectEntityForGraph(ev.sender_account_id);
                             setActiveTab('network');
                           }}
-                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium rounded transition"
+                          className="px-2 py-1 bg-raised hover:bg-raised/80 text-ink text-micro font-mono rounded-chip border border-line transition-colors"
                         >
                           Graph
                         </button>

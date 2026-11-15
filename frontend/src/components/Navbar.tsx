@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  ShieldAlert, 
   Activity, 
+  ShieldAlert, 
   Share2, 
   FileText, 
   Target, 
@@ -10,9 +10,13 @@ import {
   Clock, 
   Play, 
   Pause, 
-  UserCheck 
+  UserCheck,
+  ChevronDown,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { ActiveTab, UserRole } from '../types';
+import { Mark } from './Mark';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -39,147 +43,229 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSetSpeed,
   onRunScenario
 }) => {
-  const tabs = [
-    { id: 'operations', label: 'Operations Overview', icon: Activity },
-    { id: 'monitor', label: 'Live Rail Monitor', icon: ShieldAlert },
-    { id: 'network', label: 'Network Explorer', icon: Share2 },
-    { id: 'workbench', label: 'Investigation Cases', icon: FileText },
-    { id: 'canaries', label: 'Honeypot Registry', icon: Target },
-    { id: 'benchmarks', label: 'Model Benchmark', icon: BarChart3 },
-    { id: 'audit', label: 'Security & Audit', icon: Lock },
+  const [scenarioMenuOpen, setScenarioMenuOpen] = useState(false);
+  const scenarioMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (scenarioMenuRef.current && !scenarioMenuRef.current.contains(e.target as Node)) {
+        setScenarioMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const tabs: { id: ActiveTab; index: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'operations', index: '01', label: 'Operations', icon: Activity },
+    { id: 'monitor', index: '02', label: 'Live Monitor', icon: ShieldAlert },
+    { id: 'network', index: '03', label: 'Network Explorer', icon: Share2 },
+    { id: 'workbench', index: '04', label: 'Investigation Cases', icon: FileText },
+    { id: 'canaries', index: '05', label: 'Honeypots', icon: Target },
+    { id: 'benchmarks', index: '06', label: 'Model Benchmark', icon: BarChart3 },
+    { id: 'audit', index: '07', label: 'Security & Audit', icon: Lock },
+  ];
+
+  const scenarios: { id: 'A' | 'B' | 'C' | 'D'; label: string; badge: string; color: string; desc: string }[] = [
+    {
+      id: 'A',
+      label: 'Canary Probe Tripwire',
+      badge: 'Tripwire',
+      color: 'border-alarm/40 text-alarm hover:bg-alarm/10',
+      desc: 'Synthetic mule attempts ₹5,000 transfer to registered canary; instant review flag.'
+    },
+    {
+      id: 'B',
+      label: 'Shared Feeder Unmasking',
+      badge: 'Feeder',
+      color: 'border-feeder/40 text-feeder hover:bg-feeder/10',
+      desc: '3 mules target canaries; graph propagation unmasks upstream feeder.'
+    },
+    {
+      id: 'C',
+      label: 'Benign Merchant Lookalike',
+      badge: 'False-Positive Guard',
+      color: 'border-benign/40 text-benign hover:bg-benign/10',
+      desc: 'High-burst legitimate QR merchant verified with 0 canary links (no hold).'
+    },
+    {
+      id: 'D',
+      label: 'Multi-Hop Layering Chain',
+      badge: 'Layering',
+      color: 'border-device/40 text-device hover:bg-device/10',
+      desc: '4-hop syndicate transfer chain revealing velocity & amount conservation.'
+    }
   ];
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
-      {/* Top Banner */}
-      <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between border-b border-slate-800/60">
-        <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-tr from-amber-500 to-red-600 p-2 rounded-lg shadow-md shadow-amber-500/10">
-            <ShieldAlert className="w-5 h-5 text-slate-950 font-bold" />
+    <header className="sticky top-0 z-50 border-b border-line bg-void/90 backdrop-blur-md">
+      {/* Top Console Bar */}
+      <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4 border-b border-line">
+        {/* Brand & Platform Identity */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="relative flex items-center justify-center p-1 rounded-panel bg-panel border border-line">
+            <Mark size={24} />
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-amber-400 via-amber-200 to-white bg-clip-text text-transparent">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="font-display text-[15px] font-semibold tracking-[-0.02em] text-ink">
                 Ghost-VPA
               </span>
-              <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                Active Cyber-Deception
+              <span className="font-mono text-micro uppercase tracking-wider px-1.5 py-0.5 rounded-chip bg-canary/10 text-canary border border-canary/20">
+                Analyst Console
               </span>
-              <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="hidden sm:inline-flex font-mono text-micro uppercase tracking-wider px-1.5 py-0.5 rounded-chip bg-benign/10 text-benign border border-benign/20">
                 Zero Fund Movement
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Bank-Controlled Canary Intelligence for Pre-Cash-Out Mule Interdiction (RBI 2026 SOP)
-            </p>
+            <span className="font-mono text-[11px] text-ink3 leading-none mt-0.5 hidden md:inline">
+              Simulated Cyber-Deception &amp; Canary-Seeded Interdiction • RBI 2026 Draft SOP
+            </span>
           </div>
         </div>
 
-        {/* Live Simulation Controls & Clock */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-slate-400 font-mono">Sim Time:</span>
-            <span className="text-slate-200 font-mono font-semibold">
+        {/* Right Tools: Clock, Simulation Controls, Scenarios, Role, Showcase Bridge */}
+        <div className="flex items-center gap-2.5">
+          {/* Sim Clock */}
+          <div className="flex items-center gap-1.5 bg-panel px-2.5 py-1 rounded-chip border border-line text-caption font-mono">
+            <Clock className="w-3.5 h-3.5 text-canary" />
+            <span className="text-ink3 hidden sm:inline">SIM:</span>
+            <span className="text-ink font-medium tabular-nums">
               {simTime ? new Date(simTime).toLocaleTimeString() : '09:00:00 UTC'}
             </span>
           </div>
 
-          <div className="flex items-center space-x-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
+          {/* Sim Controls (Play/Pause & Speed) */}
+          <div className="flex items-center gap-1 bg-panel p-0.5 rounded-chip border border-line">
             <button
               onClick={onTogglePlay}
-              className={`p-1.5 rounded text-xs font-medium flex items-center space-x-1 transition ${
-                isPaused 
-                  ? 'bg-amber-500 text-black font-semibold' 
-                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+              className={`px-2 py-1 rounded text-caption font-mono flex items-center gap-1 transition-colors ${
+                isPaused
+                  ? 'bg-canary text-void font-semibold'
+                  : 'text-ink2 hover:text-ink hover:bg-raised'
               }`}
+              title={isPaused ? 'Resume simulation' : 'Pause simulation'}
             >
-              {isPaused ? <Play className="w-3.5 h-3.5 fill-current" /> : <Pause className="w-3.5 h-3.5" />}
-              <span>{isPaused ? 'Resume' : 'Pause'}</span>
+              {isPaused ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3" />}
+              <span className="text-micro font-medium">{isPaused ? 'RUN' : 'PAUSE'}</span>
             </button>
-            {[1, 5, 20].map((s) => (
-              <button
-                key={s}
-                onClick={() => onSetSpeed(s)}
-                className={`px-2 py-1 rounded text-xs font-mono transition ${
-                  speed === s ? 'bg-slate-700 text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {s}x
-              </button>
-            ))}
+            <div className="flex items-center border-l border-line pl-1">
+              {[1, 5, 20].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => onSetSpeed(s)}
+                  className={`px-1.5 py-0.5 rounded text-micro font-mono transition-colors ${
+                    speed === s
+                      ? 'bg-raised text-canary font-bold'
+                      : 'text-ink3 hover:text-ink2'
+                  }`}
+                  title={`Run simulation at ${s}x speed`}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Quick Scenario Triggers */}
-          <div className="hidden lg:flex items-center space-x-1 border-l border-slate-800 pl-4">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold mr-1">Scenarios:</span>
+          {/* Scenario Trigger Quick Menu */}
+          <div className="relative" ref={scenarioMenuRef}>
             <button
-              onClick={() => onRunScenario('A')}
-              className="px-2 py-1 bg-red-950/50 hover:bg-red-900/60 border border-red-800/40 text-red-300 rounded text-xs font-medium transition"
-              title="Scenario A: Immediate Canary Tripwire"
+              onClick={() => setScenarioMenuOpen(!scenarioMenuOpen)}
+              className="flex items-center gap-1.5 bg-panel hover:bg-raised text-ink2 hover:text-ink px-2.5 py-1 rounded-chip border border-line text-caption font-mono transition-colors"
+              title="Launch deterministic demonstration scenarios"
             >
-              A: Canary
+              <Sparkles className="w-3.5 h-3.5 text-canary" />
+              <span className="text-micro font-medium uppercase">Scenarios</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${scenarioMenuOpen ? 'rotate-180' : ''}`} />
             </button>
-            <button
-              onClick={() => onRunScenario('B')}
-              className="px-2 py-1 bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/40 text-purple-300 rounded text-xs font-medium transition"
-              title="Scenario B: Shared Upstream Feeder Unmasking"
-            >
-              B: Feeder
-            </button>
-            <button
-              onClick={() => onRunScenario('C')}
-              className="px-2 py-1 bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-800/40 text-emerald-300 rounded text-xs font-medium transition"
-              title="Scenario C: Benign Merchant Lookalike"
-            >
-              C: Benign
-            </button>
-            <button
-              onClick={() => onRunScenario('D')}
-              className="px-2 py-1 bg-blue-950/50 hover:bg-blue-900/60 border border-blue-800/40 text-blue-300 rounded text-xs font-medium transition"
-              title="Scenario D: Multi-Hop Layering Chain"
-            >
-              D: Multi-Hop
-            </button>
+
+            {scenarioMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-72 bg-panel border border-line-strong rounded-panel shadow-panel p-2 z-50 animate-fade-in">
+                <div className="px-2 py-1 border-b border-line mb-1">
+                  <span className="font-mono text-micro text-ink3 uppercase tracking-wider">
+                    Demonstration Scenarios
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {scenarios.map((sc) => (
+                    <button
+                      key={sc.id}
+                      onClick={() => {
+                        onRunScenario(sc.id);
+                        setScenarioMenuOpen(false);
+                      }}
+                      className="w-full text-left p-2 rounded-card hover:bg-raised/70 border border-transparent hover:border-line transition-all group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-caption font-semibold text-ink group-hover:text-canary">
+                          Scenario {sc.id}
+                        </span>
+                        <span className={`font-mono text-micro px-1.5 py-0.5 rounded-chip border ${sc.color}`}>
+                          {sc.badge}
+                        </span>
+                      </div>
+                      <p className="font-sans text-micro text-ink2 mt-0.5 line-clamp-1">
+                        {sc.label}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Role Switcher */}
+          {/* Role Switcher (Simulated RBAC) */}
           <div 
-            className="flex items-center space-x-2 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800"
+            className="flex items-center gap-1.5 bg-panel px-2 py-1 rounded-chip border border-line text-caption font-mono"
             title="Demonstration Role-Based Action Gating (Simulated RBAC)"
           >
-            <UserCheck className="w-3.5 h-3.5 text-slate-400" />
+            <UserCheck className="w-3.5 h-3.5 text-ink3" />
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
-              className="bg-transparent text-xs text-slate-200 font-medium focus:outline-none cursor-pointer"
+              className="bg-transparent text-micro text-ink font-medium focus:outline-none cursor-pointer"
             >
-              <option value="Analyst" className="bg-slate-900 text-slate-100">Analyst</option>
-              <option value="Supervisor" className="bg-slate-900 text-slate-100">Supervisor (Hold Auth)</option>
-              <option value="Auditor" className="bg-slate-900 text-slate-100">Auditor (Read-Only)</option>
+              <option value="Analyst" className="bg-panel text-ink">Analyst</option>
+              <option value="Supervisor" className="bg-panel text-ink">Supervisor (Hold Auth)</option>
+              <option value="Auditor" className="bg-panel text-ink">Auditor (Read-Only)</option>
             </select>
           </div>
+
+          {/* Cross-Link to Public Showcase Website */}
+          <a
+            href="http://localhost:5174"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden xl:flex items-center gap-1 px-2.5 py-1 text-micro font-mono text-ink2 hover:text-ink border border-line hover:border-canary/40 rounded-chip bg-panel hover:bg-raised transition-all"
+            title="Open public technical showcase website on Port 5174"
+          >
+            <span>Showcase Site</span>
+            <ExternalLink className="w-3 h-3 text-canary" />
+          </a>
         </div>
       </div>
 
-      {/* Primary Navigation Tabs */}
+      {/* Primary Instrument Tabs */}
       <div className="max-w-7xl mx-auto px-4">
-        <nav className="flex space-x-1 overflow-x-auto py-1">
+        <nav className="flex items-center space-x-1 overflow-x-auto no-scrollbar py-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as ActiveTab)}
-                className={`flex items-center space-x-2 px-3.5 py-2 text-xs font-medium rounded-lg transition whitespace-nowrap ${
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-3 py-1.5 text-caption font-mono rounded-chip transition-all whitespace-nowrap ${
                   isActive
-                    ? 'bg-slate-800 text-amber-400 shadow-sm border border-slate-700 font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                    ? 'bg-raised text-ink border border-canary/40 font-medium shadow-sm'
+                    : 'text-ink2 hover:text-ink hover:bg-raised/40 border border-transparent'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
-                <span>{tab.label}</span>
+                <span className={`text-micro ${isActive ? 'text-canary font-semibold' : 'text-ink3'}`}>
+                  {tab.index}
+                </span>
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-canary' : 'text-ink3'}`} />
+                <span className="font-sans text-caption">{tab.label}</span>
               </button>
             );
           })}

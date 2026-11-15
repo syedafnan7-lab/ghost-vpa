@@ -129,7 +129,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-void text-ink flex flex-col font-sans selection:bg-canary selection:text-void">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -193,10 +193,14 @@ export const App: React.FC = () => {
         {activeTab === 'audit' && <SecurityAuditLogs />}
       </main>
 
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-4 px-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-line bg-void/90 py-4 px-6 text-center text-caption font-mono text-ink3">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
-          <span>Ghost-VPA • St Aloysius × RBIH FinTech Innovation Hackathon 2026 (Track 1)</span>
-          <span className="font-mono text-[11px] text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="font-display font-medium text-ink2">Ghost-VPA</span>
+            <span>•</span>
+            <span>St Aloysius × RBIH FinTech Innovation Hackathon 2026</span>
+          </div>
+          <span className="text-micro text-ink3">
             Zero Real Funds Movement • Pure Synthetic Regulatory Simulation Rail
           </span>
         </div>

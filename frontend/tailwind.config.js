@@ -7,18 +7,35 @@ export default {
   theme: {
     extend: {
       colors: {
+        void: '#04070C',
+        panel: '#0A0F17',
+        raised: '#121A26',
+        ink: '#E8EEF7',
+        ink2: '#9AA7B8',
+        ink3: '#5C6B7E',
+        line: 'rgba(148,163,184,0.14)',
+        lineStrong: 'rgba(148,163,184,0.26)',
+        'line-strong': 'rgba(148,163,184,0.26)',
         canary: {
+          DEFAULT: '#F5A524',
+          400: '#F5A524',
           500: '#F59E0B',
           600: '#D97706',
+          deep: '#B45309',
         },
         crimson: {
           500: '#EF4444',
           600: '#DC2626',
-        }
+        },
+        alarm: '#F04438',
+        benign: '#2DD4A7',
+        feeder: '#A78BFA',
+        device: '#38BDF8',
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        display: ['"Space Grotesk"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         // Console-tuned scale: an 11px floor so dense tables stay legible.

@@ -49,31 +49,31 @@ export const SecurityAuditLogs: React.FC = () => {
     switch (verify.kind) {
       case 'loading':
         return (
-          <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800/60 border border-slate-700 text-slate-300 rounded-lg text-xs font-semibold">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Verifying…</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-raised border border-line text-ink2 rounded-chip text-caption font-mono">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-canary" />
+            <span>Verifying SHA-256 Chain…</span>
           </div>
         );
       case 'error':
         return (
-          <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800/60 border border-slate-700 text-slate-300 rounded-lg text-xs font-semibold">
-            <ShieldAlert className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-raised border border-line text-alarm rounded-chip text-caption font-mono">
+            <ShieldAlert className="w-3.5 h-3.5" />
             <span>Verification unavailable</span>
           </div>
         );
       case 'broken':
         return (
-          <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-red-950/50 border border-red-500/40 text-red-300 rounded-lg text-xs font-semibold">
-            <ShieldAlert className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-alarm/15 border border-alarm/40 text-alarm rounded-chip text-caption font-mono font-semibold">
+            <ShieldAlert className="w-3.5 h-3.5" />
             <span>Chain broken — block {verify.data.broken_block?.log_id ?? 'unknown'}</span>
           </div>
         );
       case 'intact':
       default:
         return (
-          <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-semibold">
-            <ShieldCheck className="w-4 h-4" />
-            <span>{verify.data.verified_blocks} blocks verified</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-benign/15 border border-benign/30 text-benign rounded-chip text-caption font-mono font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>{verify.data.verified_blocks} Blocks Verified Intact</span>
           </div>
         );
     }
@@ -82,29 +82,29 @@ export const SecurityAuditLogs: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Audit Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-panel border border-line rounded-panel p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-panel">
         <div>
-          <div className="flex items-center space-x-2">
-            <Lock className="w-5 h-5 text-amber-400" />
-            <h3 className="font-semibold text-slate-100 text-sm">
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-canary" />
+            <h3 className="font-display font-medium text-ink text-sm">
               Cryptographically Chained Immutable Forensic Audit Trail
             </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+          <p className="font-sans text-caption text-ink2 mt-1 max-w-2xl leading-relaxed">
             Every state change, alert trigger, analyst note, and supervisor hold authorization is chained using SHA-256 block hashing:{' '}
-            <code className="text-amber-300">hash_i = SHA256(prev_hash | timestamp | actor_id | actor_role | action | entity_id | payload)</code>.{' '}
-            Tampering with past records breaks the cryptographic chain.
+            <code className="font-mono text-canary text-[11px]">hash_i = SHA256(prev_hash | timestamp | actor | action | payload)</code>.{' '}
+            Any retroactive modification instantly breaks tip verification.
           </p>
           {verify.kind === 'broken' && verify.data.broken_block && (
-            <p className="text-xs text-red-300 mt-2 max-w-2xl font-mono leading-relaxed animate-fade-in">
+            <p className="text-caption text-alarm mt-2 max-w-2xl font-mono leading-relaxed animate-fade-in">
               {verify.data.broken_block.reason} — expected{' '}
-              <span className="text-red-200">{verify.data.broken_block.expected.slice(0, 24)}…</span>, stored{' '}
-              <span className="text-red-200">{verify.data.broken_block.actual.slice(0, 24)}…</span>
+              <span className="text-ink">{verify.data.broken_block.expected.slice(0, 24)}…</span>, stored{' '}
+              <span className="text-ink">{verify.data.broken_block.actual.slice(0, 24)}…</span>
             </p>
           )}
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2.5">
           {badge()}
           <button
             onClick={() => {
@@ -112,77 +112,65 @@ export const SecurityAuditLogs: React.FC = () => {
               runVerification();
             }}
             disabled={loading || verify.kind === 'loading'}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Re-verify chain"
+            className="p-2 bg-raised hover:bg-raised/80 text-ink2 hover:text-ink rounded-chip border border-line transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Re-verify cryptographic chain"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Audit Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-          <span className="text-xs font-semibold text-slate-200">Forensic Block Ledger ({logs.length} Blocks)</span>
-          <span className="text-[11px] text-slate-400 font-mono" title={verify.kind === 'intact' ? verify.data.tip_hash : undefined}>
+      <div className="bg-panel border border-line rounded-panel overflow-hidden shadow-panel">
+        <div className="px-5 py-3 border-b border-line flex items-center justify-between bg-panel">
+          <div className="flex items-center gap-2">
+            <span className="font-display font-medium text-ink text-caption">Forensic Block Ledger</span>
+            <span className="font-mono text-micro text-ink3 bg-raised px-2 py-0.5 rounded-chip border border-line">
+              {logs.length} blocks
+            </span>
+          </div>
+          <span className="text-micro text-ink3 font-mono" title={verify.kind === 'intact' ? verify.data.tip_hash : undefined}>
             {verify.kind === 'intact' && verify.data.tip_hash
-              ? `Tip Hash: ${verify.data.tip_hash.slice(0, 20)}…`
-              : 'Genesis Hash: 0000000000000000…'}
+              ? `Tip: ${verify.data.tip_hash.slice(0, 24)}…`
+              : 'Genesis: 0000000000000000…'}
           </span>
         </div>
 
         <div className="overflow-x-auto max-h-[540px]">
-          <table className="w-full text-left border-collapse text-xs font-mono">
-            <thead className="bg-slate-950/80 sticky top-0 border-b border-slate-800 text-slate-400 text-[11px]">
+          <table className="w-full text-left border-collapse text-caption font-mono">
+            <thead className="bg-void/90 sticky top-0 border-b border-line text-ink3 text-micro">
               <tr>
-                <th className="py-2.5 px-4">Block ID</th>
-                <th className="py-2.5 px-4">Timestamp (UTC)</th>
-                <th className="py-2.5 px-4">Actor</th>
-                <th className="py-2.5 px-4">Role</th>
-                <th className="py-2.5 px-4">Action</th>
-                <th className="py-2.5 px-4">Target Entity</th>
-                <th className="py-2.5 px-4">Current Block Hash</th>
+                <th className="py-2.5 px-4 font-normal">Block ID</th>
+                <th className="py-2.5 px-4 font-normal">Timestamp (UTC)</th>
+                <th className="py-2.5 px-4 font-normal">Actor</th>
+                <th className="py-2.5 px-4 font-normal">Action</th>
+                <th className="py-2.5 px-4 font-normal">Entity ID</th>
+                <th className="py-2.5 px-4 font-normal">SHA-256 Digest</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs">
-              {logs.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 font-sans">
-                    No audit records registered yet.
+            <tbody className="divide-y divide-line/60 text-micro">
+              {logs.map((log) => (
+                <tr key={log.log_id} className="hover:bg-raised/40 transition-colors">
+                  <td className="py-2.5 px-4 font-bold text-ink">#{log.log_id}</td>
+                  <td className="py-2.5 px-4 text-ink3">
+                    {new Date(log.timestamp).toISOString().replace('T', ' ').slice(0, 19)}
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <span className="text-ink">{log.actor_id}</span>
+                    <span className="text-ink3 text-[10px] ml-1.5">({log.actor_role})</span>
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <span className="px-1.5 py-0.5 rounded-chip text-[10px] bg-raised text-canary border border-line">
+                      {log.action}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-4 text-ink2">{log.entity_id}</td>
+                  <td className="py-2.5 px-4 text-ink3 font-mono text-[10px]" title={log.current_hash}>
+                    <span className="text-canary font-semibold">{log.current_hash.slice(0, 8)}</span>
+                    <span>{log.current_hash.slice(8, 24)}…</span>
                   </td>
                 </tr>
-              ) : (
-                logs.map((l) => (
-                  <tr key={l.log_id} className="hover:bg-slate-800/30 transition">
-                    <td className="py-2.5 px-4 font-bold text-amber-400">{l.log_id}</td>
-                    <td className="py-2.5 px-4 text-slate-400">
-                      {new Date(l.timestamp).toISOString().replace('T', ' ').slice(0, 23)}
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-200">{l.actor_id}</td>
-                    <td className="py-2.5 px-4 font-sans">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        l.actor_role === 'Supervisor'
-                          ? 'bg-purple-500/20 text-purple-300'
-                          : l.actor_role === 'SYSTEM'
-                          ? 'bg-red-500/20 text-red-300'
-                          : 'bg-slate-800 text-slate-300'
-                      }`}>
-                        {l.actor_role}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-4 font-bold text-slate-300">{l.action}</td>
-                    <td className="py-2.5 px-4 text-slate-400">{l.entity_id}</td>
-                    <td className="py-2.5 px-4 font-mono text-[10px]">
-                      <div className="flex items-center space-x-1">
-                        <Link2 className={`w-3 h-3 shrink-0 ${verify.kind === 'broken' ? 'text-red-400' : 'text-emerald-400'}`} />
-                        <span className="truncate w-36 text-slate-400" title={l.current_hash}>
-                          {l.current_hash.slice(0, 16)}…
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
