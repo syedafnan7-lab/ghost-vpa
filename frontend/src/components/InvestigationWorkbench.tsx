@@ -63,8 +63,8 @@ export const InvestigationWorkbench: React.FC<InvestigationWorkbenchProps> = ({
         <div className="flex items-center justify-between border-b border-line pb-3 mb-3">
           <div>
             <span className="font-mono text-micro uppercase tracking-wider text-ink3">Triage Queue</span>
-            <h3 className="font-display font-medium text-ink text-caption">Active RBI SOP Cases</h3>
-            <span className="text-micro text-ink3 font-sans">Annex III Mule Investigation Dossiers</span>
+              <h3 className="font-display font-medium text-ink text-caption">Simulation Cases</h3>
+              <span className="text-micro text-ink3 font-sans">Prototype review dossiers</span>
           </div>
           <span className="font-mono text-micro bg-raised px-2 py-0.5 rounded-chip text-canary font-bold border border-line">
             {cases.length} Total
@@ -98,7 +98,14 @@ export const InvestigationWorkbench: React.FC<InvestigationWorkbenchProps> = ({
                       {c.case_status}
                     </span>
                   </div>
-                  <div className="font-mono text-caption text-ink mt-1.5">{c.target_account_id}</div>
+                  <div className="font-mono text-caption text-ink mt-1.5 flex items-center justify-between">
+                    <span>{c.target_account_id}</span>
+                    {c.upstream_feeder_account && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-alarm/10 text-alarm border border-alarm/20">
+                        Feeder: {c.upstream_feeder_account}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center justify-between font-mono text-micro text-ink3 mt-1.5">
                     <span>SLA: Day {c.sop_day_counter}/60</span>
                     <span className="text-canary font-medium">{c.explanation_days_left}d notice left</span>
@@ -141,6 +148,39 @@ export const InvestigationWorkbench: React.FC<InvestigationWorkbenchProps> = ({
               </div>
             </div>
 
+            {/* Attribution & Syndicate Intelligence Evidence Card */}
+            <div className="bg-void/80 p-3.5 rounded-card border border-line grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <span className="font-mono text-[10px] text-ink3 uppercase block">Upstream Candidate:</span>
+                <span className="font-mono text-caption font-bold text-alarm">
+                  {selectedCase.upstream_feeder_account ? (
+                    <span className="flex items-center gap-1">
+                      <ShieldAlert className="w-3.5 h-3.5 text-alarm inline" />
+                      {selectedCase.upstream_feeder_account}
+                    </span>
+                  ) : (
+                    <span className="text-ink3 font-normal">Direct / Unattributed</span>
+                  )}
+                </span>
+              </div>
+              <div>
+                <span className="font-mono text-[10px] text-ink3 uppercase block">Shared Feeder Links:</span>
+                <span className="font-mono text-caption font-semibold text-canary">
+                  {selectedCase.connected_mule_count > 0 ? (
+                    <span>{selectedCase.connected_mule_count} Connected Accounts</span>
+                  ) : (
+                    <span className="text-ink3 font-normal">Isolated Node</span>
+                  )}
+                </span>
+              </div>
+              <div>
+                <span className="font-mono text-[10px] text-ink3 uppercase block">Topology Cluster ID (synthetic):</span>
+                <span className="font-mono text-caption font-medium text-ink2">
+                  {selectedCase.cluster_id || "ISOLATED-CASE"}
+                </span>
+              </div>
+            </div>
+
             {/* Error Message if Role Unauthorized */}
             {actionError && (
               <div className="bg-alarm/10 border border-alarm/30 p-3 rounded-card text-caption text-alarm flex items-center gap-2 font-mono">
@@ -153,37 +193,36 @@ export const InvestigationWorkbench: React.FC<InvestigationWorkbenchProps> = ({
             <div className="bg-void/70 p-4 rounded-card border border-line space-y-3">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-caption font-semibold text-ink uppercase tracking-wider">
-                  RBI SOP Case Actions (Simulated Role: <strong className="text-canary">{role}</strong>)
+                  Case Actions (Demo role: <strong className="text-canary">{role}</strong>)
                 </span>
-                <span className="font-mono text-micro text-ink3">Separation of Duties Enforced</span>
+                <span className="font-mono text-micro text-ink3">Disabled: no authenticated identity</span>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <button
+                  disabled
                   onClick={() => handleAction('DISPATCH_NOTICE')}
                   className="py-2 px-3 bg-raised hover:bg-raised/80 text-ink text-caption font-mono rounded-chip border border-line transition-colors"
                 >
                   Dispatch Notice (20d)
                 </button>
                 <button
-                  onClick={() => handleAction('APPLY_HOLD')}
-                  className={`py-2 px-3 text-caption font-mono rounded-chip border transition-colors ${
-                    role === 'Supervisor'
-                      ? 'bg-canary/20 text-canary border-canary/40 hover:bg-canary/30 font-semibold'
-                      : 'bg-void text-ink3 border-line cursor-not-allowed opacity-60'
-                  }`}
-                  title={role !== 'Supervisor' ? 'Supervisor Role Required' : 'Authorize 60-day hold'}
+                  disabled
+                  className="py-2 px-3 text-caption font-mono rounded-chip border border-line bg-void text-ink3 cursor-not-allowed opacity-60"
+                  title="Disabled: authenticated authorization is not configured"
                 >
-                  {role !== 'Supervisor' && <Lock className="w-3 h-3 inline mr-1 text-ink3" />}
-                  Apply 60d Hold
+                  <Lock className="w-3 h-3 inline mr-1 text-ink3" />
+                  Holds Disabled
                 </button>
                 <button
+                  disabled
                   onClick={() => handleAction('RESOLVE_VICTIM')}
                   className="py-2 px-3 bg-benign/15 hover:bg-benign/25 text-benign border border-benign/30 text-caption font-mono rounded-chip transition-colors"
                 >
                   Resolve as Victim
                 </button>
                 <button
+                  disabled
                   onClick={() => handleAction('CONFIRM_MULE')}
                   className="py-2 px-3 bg-alarm/15 hover:bg-alarm/25 text-alarm border border-alarm/30 text-caption font-mono rounded-chip transition-colors"
                 >
@@ -201,6 +240,7 @@ export const InvestigationWorkbench: React.FC<InvestigationWorkbenchProps> = ({
                   className="flex-1 bg-void border border-line rounded-chip px-3 py-1.5 text-caption font-mono text-ink placeholder-ink3 focus:outline-none focus:border-canary transition-colors"
                 />
                 <button
+                  disabled
                   onClick={() => handleAction('DISPATCH_NOTICE')}
                   className="px-3 py-1.5 bg-raised hover:bg-raised/80 text-ink text-caption font-mono rounded-chip border border-line transition-colors flex items-center gap-1.5"
                 >
@@ -226,7 +266,7 @@ export const InvestigationWorkbench: React.FC<InvestigationWorkbenchProps> = ({
               <div className="bg-void/70 p-4 rounded-card border border-line flex flex-col justify-between">
                 <div>
                   <span className="font-mono text-micro uppercase tracking-wider text-ink3 block mb-1">
-                    NCRP-CFCFRMS Compliance JSON
+                    NCRP-CFCFRMS Prototype Preview
                   </span>
                   <pre className="text-[10px] text-canary font-mono bg-void p-2.5 rounded-chip border border-line max-h-24 overflow-y-auto">
                     {JSON.stringify(selectedCase.ncrp_payload_preview, null, 2)}
@@ -237,7 +277,7 @@ export const InvestigationWorkbench: React.FC<InvestigationWorkbenchProps> = ({
                   className="mt-3 w-full py-2 bg-raised hover:bg-raised/80 text-canary border border-canary/30 hover:border-canary text-caption font-mono font-medium rounded-chip flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <Download className="w-3.5 h-3.5 text-canary" />
-                  <span>Download STIX 2.1 Threat Intel Bundle</span>
+                  <span>Download Prototype STIX Bundle</span>
                 </button>
               </div>
             </div>

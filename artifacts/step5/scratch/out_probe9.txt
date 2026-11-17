@@ -1,0 +1,74 @@
+### PART 1: IS A GRAPH ACTUALLY BUILT? ###
+  benchmark.py mentions 'networkx': False
+  benchmark.py mentions 'import nx': False
+  benchmark.py mentions 'MultiDiGraph': False
+  benchmark.py mentions 'temporal_engine': False
+  benchmark.py mentions 'temporal_graph': False
+  benchmark.py mentions 'cs_lp': True
+  benchmark.py mentions 'compute_cslp': False
+  benchmark.py mentions 'add_node': False
+  benchmark.py mentions 'add_edge': False
+  => The 'graph-enhanced' model trains on 12 pre-made numeric columns.
+     No graph is constructed, no CS-LP is computed, no NetworkX used.
+
+  dataset_generator.py mentions 'networkx': False
+  dataset_generator.py mentions 'MultiDiGraph': False
+  dataset_generator.py mentions 'temporal_engine': False
+  dataset_generator.py mentions 'cs_lp': True
+  dataset_generator.py mentions 'compute_cslp': False
+  dataset_generator.py mentions 'add_node': False
+  dataset_generator.py mentions 'add_edge': False
+  => The generator likewise builds NO graph. The 6 'graph' features are
+     unconditional random draws (random.uniform bands) selected by label
+     branch, not graph statistics.
+
+  Contrast: where CS-LP IS genuinely implemented (used at runtime):
+    temporal_engine.py has 'compute_cslp_scores': True
+    temporal_engine.py has 'MultiDiGraph': True
+    temporal_engine.py has 'detect_motifs': True
+  => Real graph analytics exist ONLY in the runtime engine, and never
+     touch the benchmark. The two halves are never connected.
+
+### PART 2: IDENTIFIER HANDLING ###
+  rail.py identifier formats:
+    ACCT_SYNTH
+    f"ACCT_SYNTH_RETAIL_{i+100}"
+    f"ACCT_SYNTH_{benef_bank}_{random.randint(1000, 9999)}"
+    f"ACCT_SYNTH_{sender_bank}_{random.randint(1000, 9999)}"
+    f"DEV_TOK_CUST_{i}",
+    f"DEV_TOK_{random.randint(10, 99)}_{sender_bank}"
+    f"TXN-FEED-{uuid.uuid4().hex[:8].upper()}",
+    f"TXN-SCEN-A-{uuid.uuid4().hex[:8].upper()}",
+    f"TXN-SCEN-B-{uuid.uuid4().hex[:8].upper()}",
+    f"TXN-SCEN-C-{uuid.uuid4().hex[:8].upper()}",
+    f"TXN-SCEN-D-{uuid.uuid4().hex[:8].upper()}",
+    f"TXN-{uuid.uuid4().hex[:10].upper()}",
+
+  Are identifiers hashed, masked or pseudonymised anywhere?
+    rail.py: NONE
+  => The identifiers are PLAINTEXT synthetic tokens. They are
+     pseudonymous-by-construction (no real PII embedded), which is a
+     genuine design strength, but no hashing/masking is applied and
+     none is needed because no real PII exists to protect.
+
+  Does the STIX exporter redact anything?
+    redaction/pseudonymisation calls in stix_exporter.py: NONE
+  => threat-model.md:29 claims 'sanitize all internal node IDs'.
+     No sanitisation code exists. Omission != sanitisation.
+
+### PART 3: IS THE ORACLE FEATURE FED TO THE MODEL? ###
+  is_canary_hit in GRAPH_FEATURES: False
+  is_canary_hit in TABULAR_FEATURES: False
+  canary_hop_distance in GRAPH_FEATURES: True
+  => Direct tripwire flag is NOT used (good). BUT canary_hop_distance
+     IS used, and it is derived from the same generator decision,
+     with solo AUC 0.843. The leakage is indirect but real.
+
+### PART 4: LOCAL DATABASE CONTENTS (git-ignored, on disk) ###
+  tables: ['canary_registry', 'payment_events', 'canary_alerts', 'investigation_cases', 'audit_logs']
+    canary_registry      rows=4
+    payment_events       rows=17053
+    canary_alerts        rows=45
+    investigation_cases  rows=45
+    audit_logs           rows=2
+  => DB is git-ignored (line 25) and holds only synthetic rows.

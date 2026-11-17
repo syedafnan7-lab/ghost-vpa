@@ -66,15 +66,18 @@ async def take_case_action(
     db: AsyncSession = Depends(get_db),
     x_user_role: str = Header("Analyst", alias="X-User-Role")
 ):
+    # The role header and actor ID are client-controlled. Disable every case
+    # mutation until a trusted authorization provider and audit identity exist.
+    raise HTTPException(
+        status_code=503,
+        detail="Case actions are disabled: this prototype has no authenticated authorization provider.",
+    )
+
     stmt = select(CaseModel).where(CaseModel.case_id == case_id)
     result = await db.execute(stmt)
     case = result.scalars().first()
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-
-    # RBAC Enforcement: Only Supervisor can apply formal debit hold
-    if payload.action == "APPLY_HOLD" and x_user_role != "Supervisor":
-        raise HTTPException(status_code=403, detail="Permission Denied: Only Supervisor can authorize formal 60-day SOP debit hold.")
 
     notes = json.loads(case.analyst_notes_json or "[]")
     now_str = datetime.now(timezone.utc).strftime("%H:%M:%S")

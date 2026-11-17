@@ -24,7 +24,7 @@ export function TopBar() {
           <Mark size={26} />
           <span className="flex flex-col leading-none">
             <span className="font-display text-[15px] font-semibold tracking-[-0.02em] text-ink">Ghost-VPA</span>
-            <span className="mt-1 font-mono text-micro text-ink3">bank-controlled honeypot VPAs</span>
+            <span className="mt-1 font-mono text-micro text-ink3">simulation prototype</span>
           </span>
         </a>
 

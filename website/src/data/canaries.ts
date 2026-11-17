@@ -1,5 +1,5 @@
 // Records mirror backend/app/core/honeypot_registry.py default seed data.
-export type CanaryType = 'REGULATORY_TRIPWIRE' | 'CONSENTED_TURNOAT';
+export type CanaryType = 'SYNTHETIC_DEMO_CANARY';
 
 export interface CanaryRecord {
   id: string;
@@ -16,36 +16,36 @@ export const CANARIES: CanaryRecord[] = [
     id: 'CANARY-BLR-001',
     vpa: 'canary.trap.01@icixbank',
     bank: 'ICIX',
-    type: 'REGULATORY_TRIPWIRE',
+    type: 'SYNTHETIC_DEMO_CANARY',
     status: 'ACTIVE',
-    purpose: 'Regulatory honeypot for southern-region mule detection.',
+    purpose: 'Synthetic demo identifier.',
     region: 'South',
   },
   {
     id: 'CANARY-MUM-002',
     vpa: 'canary.alert.02@hdfxbank',
     bank: 'HDFX',
-    type: 'REGULATORY_TRIPWIRE',
+    type: 'SYNTHETIC_DEMO_CANARY',
     status: 'ACTIVE',
-    purpose: 'Layering trap for high-velocity rapid splits.',
+    purpose: 'Synthetic demo identifier.',
     region: 'West',
   },
   {
     id: 'CANARY-DEL-003',
     vpa: 'canary.tripwire.03@sbinxbank',
     bank: 'SBINX',
-    type: 'REGULATORY_TRIPWIRE',
+    type: 'SYNTHETIC_DEMO_CANARY',
     status: 'ACTIVE',
-    purpose: 'Canary for micro-transfer penny-drop probing.',
+    purpose: 'Synthetic demo identifier.',
     region: 'North',
   },
   {
     id: 'CANARY-SOP-004',
     vpa: 'turncoat.surrender.04@axsxbank',
     bank: 'AXSX',
-    type: 'CONSENTED_TURNOAT',
+    type: 'SYNTHETIC_DEMO_CANARY',
     status: 'ACTIVE',
-    purpose: 'Consented surrendered VPA under the RBI 20-day explanation window.',
+    purpose: 'Synthetic demo identifier.',
     region: 'East',
   },
 ];

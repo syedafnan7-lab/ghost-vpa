@@ -9,7 +9,7 @@ echo.
 cd /d "%~dp0"
 
 echo [1/2] Launching Ghost-VPA FastAPI Backend Engine (Port 8000)...
-start "Ghost-VPA Backend" cmd /k "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload"
+start "Ghost-VPA Backend" cmd /k "python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload"
 
 echo [2/2] Launching Ghost-VPA React/D3 Frontend (Port 5173)...
 start "Ghost-VPA Frontend" cmd /k "cd frontend && npm run dev"

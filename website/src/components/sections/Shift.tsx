@@ -4,12 +4,12 @@ import { CANARIES } from '@/data/canaries';
 
 const TYPES = [
   {
-    name: 'Regulatory tripwire',
-    body: 'A bank-designated handle in the bank’s own operational namespace. It is never a customer account, never carries KYC, and is registered so that any probe is an expected event — not a breach.',
+    name: 'Bank-controlled canary (proposed)',
+    body: 'The research concept is a bank-controlled payment identifier used as an interaction sensor. It has not been provisioned, legally approved, or tested for discoverability.',
   },
   {
-    name: 'Consented turncoat',
-    body: 'A genuine customer VPA surrendered during the RBI 20-day explanation window, converted into a monitored trap. It keeps authentic handle history, so a penny-drop validation returns a real-looking beneficiary name while the probe trips the wire.',
+    name: 'Synthetic demo identifier',
+    body: 'The local demo uses pseudonymous synthetic VPAs only. It has no customer-surrendered identifier, identity data, real beneficiary lookup, or real payment request.',
   },
 ];
 
@@ -20,7 +20,7 @@ export function Shift() {
       index="02"
       kicker="The deception shift"
       title="The receiver is the sensor"
-      lede="Syndicates validate a receiving endpoint before they route to it. That probe is the moment of maximum intelligence — so Ghost-VPA makes the destination the observation point."
+      lede="The hypothesis is that an interaction with a bank-controlled endpoint could add a distinct signal. This prototype does not establish attacker behavior or operational feasibility."
     >
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
         <div>
@@ -41,15 +41,14 @@ export function Shift() {
               <div className="flex flex-wrap items-center gap-y-3 gap-x-0 font-mono text-caption">
                 <span className="border border-line px-3 py-2 text-ink2">mule probe</span>
                 <span className="px-2 text-ink3">→</span>
-                <span className="border border-line px-3 py-2 text-ink2">CBS / PSP sidecar</span>
+                <span className="border border-line px-3 py-2 text-ink2">proposed bank interface</span>
                 <span className="px-2 text-ink3">→</span>
                 <span className="border border-canary/50 px-3 py-2 text-canary">O(1) registry match</span>
                 <span className="px-2 text-ink3">→</span>
-                <span className="border border-line px-3 py-2 text-ink2">intercept</span>
+                <span className="border border-line px-3 py-2 text-ink2">review signal</span>
               </div>
               <p className="mt-4 text-body text-ink2">
-                No switch changes. No new protocol. The sidecar performs a read-only lookup against
-                the canary registry before the core ledger posting instruction is issued.
+                This is a proposed flow only. No switch, bank interface, or ledger posting instruction is connected in this prototype.
               </p>
             </div>
           </Reveal>
@@ -67,7 +66,7 @@ export function Shift() {
         <Reveal className="lg:sticky lg:top-28 lg:self-start">
           <div className="panel">
             <div className="flex items-baseline justify-between border-b border-line px-4 py-3">
-              <span className="font-mono text-caption text-ink2">Figure 02 — Canary registry</span>
+              <span className="font-mono text-caption text-ink2">Figure 02 — Synthetic demo registry</span>
               <span className="font-mono text-micro text-ink3">honeypot_registry.py</span>
             </div>
             <div className="overflow-x-auto">

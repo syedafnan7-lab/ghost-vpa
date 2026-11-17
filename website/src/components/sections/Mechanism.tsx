@@ -5,7 +5,7 @@ import { TripwireDemo } from '@/components/demos/TripwireDemo';
 const NOTES = [
   {
     title: 'What this is',
-    body: 'A deterministic simulated attempt against a registered canary, processed by the same record shape the workbench uses. The registry lookup is an in-memory set check performed before any ledger posting instruction.',
+    body: 'A deterministic simulated interaction against a registered synthetic canary. The demo records a triage event; it does not connect to a switch or control a ledger posting instruction.',
   },
   {
     title: 'What this is not',
@@ -13,7 +13,7 @@ const NOTES = [
   },
   {
     title: 'Why it is fast',
-    body: 'The canary set lives in memory, so recognition is a hash lookup rather than a model inference. The tripwire is a rule, not a prediction — which is why it can fire in under five milliseconds.',
+    body: 'The canary set lives in memory, so matching is a deterministic registry check rather than model inference. No bank-side latency or payment-switch timing has been measured.',
   },
 ];
 
@@ -24,7 +24,7 @@ export function Mechanism() {
       index="03"
       kicker="The mechanism"
       title="The tripwire, step by step"
-      lede="Run the attempt. Watch the registry recognise the destination, the sidecar stop the posting, and the sender become a review flag rather than a suspect."
+      lede="Run a synthetic event. Watch the registry match the destination and create a review flag. The prototype does not intercept or post a real payment."
     >
       <Reveal>
         <TripwireDemo />

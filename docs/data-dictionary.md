@@ -1,5 +1,7 @@
 # Ghost-VPA Data Dictionary & Entity Schemas
 
+> **Prototype status (17 Nov 2026):** Fields named after RBI SOP timelines are simulation values only. The September 2026 RBI KYC amendment directions remain a draft proposal; case mutations are disabled and no regulatory action is performed.
+
 **Project:** Ghost-VPA  
 **Document:** `docs/data-dictionary.md`  
 **Version:** 1.0.0  
@@ -16,7 +18,7 @@ Represents a bank-designated or customer-consented canary VPA.
 | `canary_id` | String (UUID) | No | Unique identifier of the canary endpoint | `"CANARY-BLR-001"` |
 | `vpa` | String | No | Non-routable synthetic VPA address | `"canary.trap.01@icixbank"` |
 | `designated_bank` | String (Code) | No | Synthetic bank managing this canary | `"ICIX"` |
-| `canary_type` | Enum | No | Type of canary deployment (`REGULATORY_TRIPWIRE`, `CONSENTED_TURNCOAT`) | `"REGULATORY_TRIPWIRE"` |
+| `canary_type` | Enum | No | Type of canary deployment (`REGULATORY_TRIPWIRE`, `INTERNAL_GL_SUSPENSE`) | `"REGULATORY_TRIPWIRE"` |
 | `status` | Enum | No | Lifecycle status (`ACTIVE`, `PAUSED`, `DECOMMISSIONED`) | `"ACTIVE"` |
 | `created_at` | ISO 8601 UTC | No | Timestamp of canary registration | `"2026-11-14T10:00:00Z"` |
 | `hit_count` | Integer | No | Total simulated interaction attempts | `14` |
@@ -36,7 +38,7 @@ Represents an incoming simulated payment transaction.
 | `sender_bank` | String (Code) | No | Remitter bank identifier | `"HDFX"` |
 | `beneficiary_vpa` | String | No | Beneficiary VPA | `"canary.trap.01@icixbank"` |
 | `beneficiary_bank` | String (Code) | No | Beneficiary bank identifier | `"ICIX"` |
-| `amount_inr` | Float | No | Simulated payment amount in Indian Rupees | `5000.00` |
+| `amount_inr` | Float | No | Simulated event amount in Indian Rupees; an attempt amount unless the event is confirmed settled | `5000.00` |
 | `payment_rail` | Enum | No | Rail type (`UPI`, `IMPS`) | `"UPI"` |
 | `attempt_type` | Enum | No | Transfer mode (`P2P`, `P2M`, `PENNY_DROP_PROBE`) | `"PENNY_DROP_PROBE"` |
 | `device_token` | String | No | Synthetic device fingerprint hash | `"DEV_TOK_99A4F"` |

@@ -1,17 +1,19 @@
 # Ghost-VPA Architecture Specification & System Blueprint
 
-**Document:** `docs/designs/ghost-vpa-architecture.md`  
-**Version:** 2.0.0-POST-GOLDFISH-APPROVED  
-**Author:** Coordinated Senior FinTech Engineering Team  
-**Review Harness:** Elephant-Goldfish Model (EGM)  
-**Status:** Design Approved — Implementation Ready  
-**Track:** Digital Payments Fraud Detection and Prevention (Hackathon 2026)  
+**Document:** `docs/designs/ghost-vpa-architecture.md`
+**Version:** 2.0.0-POST-GOLDFISH-APPROVED
+**Author:** Coordinated Senior FinTech Engineering Team
+**Review Harness:** Elephant-Goldfish Model (EGM)
+**Status:** Historical target architecture; not an implementation inventory
+**Track:** Digital Payments Fraud Detection and Prevention (Hackathon 2026)
 
 ---
 
 ## 1. Executive Blueprint & Core Invariants
 
-Ghost-VPA is an active cyber-deception and temporal graph-intelligence platform operating as a bank-side Core Banking System (CBS) and Payment Service Provider (PSP) sidecar. The platform deploys bank-designated, bank-controlled regulatory canary VPAs on domestic payment rails (UPI/IMPS) to detect, trace, and dismantle money-mule rings prior to cash-out.
+Ghost-VPA is a simulation prototype exploring bank-controlled canary identifiers and temporal graph investigation. The sidecar, UPI/IMPS deployment, live event queue, production ML scoring, and payment interception shown below are proposed architecture only. No bank or payment rail is connected.
+
+> Current implementation note (17 Nov 2026): the backend uses synthetic events, SQLite/WAL, an in-memory NetworkX graph, and a React workbench. Graph propagation uses confirmed synthetic credits; canary attempts are interaction evidence. Comparative benchmark results have been withdrawn. Case mutations are disabled because authenticated authorization is absent. See `artifacts/step5/CODEX_COMPLETE_PROJECT_REVIEW.md` for the verified map and remaining defects.
 
 ```
        [ Deterministic Simulated Payment Rail (HDFX, ICIX, SBINX, AXSX) ]

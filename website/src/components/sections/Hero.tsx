@@ -4,7 +4,7 @@ import { WORKBENCH_URL } from '@/data/nav';
 
 const TELEMETRY = [
   { value: '< 5 ms', label: 'tripwire on canary probe', note: 'simulated rail' },
-  { value: '₹0', label: 'posted to the honeypot', note: 'pre-routing intercept' },
+  { value: '₹0', label: 'real funds moved', note: 'simulation only' },
   { value: '72 h', label: 'temporal graph window', note: 'sliding, pruned' },
   { value: '4', label: 'canaries in the registry', note: 'synthetic seed data' },
 ];
@@ -17,19 +17,19 @@ export function Hero() {
           <div className="flex flex-wrap items-center gap-3">
             <span className="chip">
               <span className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-canary" />
-              BANK-CONTROLLED HONEYPOT VPAS
+              CANARY IDENTIFIER RESEARCH
             </span>
             <span className="chip">CANARY-SEEDED TEMPORAL GRAPH INTELLIGENCE</span>
           </div>
 
           <h1 className="mt-8 max-w-5xl font-display text-[13vw] font-semibold leading-[0.98] tracking-[-0.045em] text-ink sm:text-6xl md:text-7xl lg:text-[86px] text-balance">
-            The transfer never lands. The ring still shows itself.
+            A simulated probe can seed a network investigation.
           </h1>
 
           <p className="mt-7 max-w-2xl text-body text-ink2 md:text-lg">
-            Ghost-VPA registers bank-controlled canary VPAs on domestic payment rails. The moment a
-            mule probes one, a pre-routing tripwire intercepts the attempt, flags the sender for
-            review, and seeds a temporal graph that traces the network upstream — before cash-out.
+            Ghost-VPA is a local simulation exploring whether bank-controlled canary identifiers
+            could add an interaction signal to temporal graph investigation. All events are
+            synthetic; there is no live payment rail, bank deployment, or measured detection result.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -39,7 +39,7 @@ export function Hero() {
               rel="noreferrer"
               className="btn-primary !bg-canary !text-black hover:!bg-[#ffb63d] active:scale-[0.98] transition-transform shadow-lg shadow-canary/10"
             >
-              <span>Launch Live Workbench</span>
+              <span>Open Local Workbench</span>
               <span className="font-mono text-xs">↗</span>
             </a>
             <a href="#mechanism" className="btn-ghost active:scale-[0.98] transition-transform">

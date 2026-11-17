@@ -18,8 +18,8 @@ export function Architecture() {
       id="architecture"
       index="07"
       kicker="The architecture"
-      title="A sidecar, not a switch replacement"
-      lede="Four tiers sit inside the bank's own CBS and PSP boundary. Nothing touches the NPCI switch, and no core banking schema changes are required."
+      title="A proposed bank-side architecture"
+      lede="The diagram describes a possible integration boundary. This repository implements a simulation, an in-memory graph, and local case views; it has no bank or payment-rail connection."
     >
       <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
         <Reveal>

@@ -24,6 +24,8 @@ class GraphEdge(BaseModel):
     delta_t_sec: Optional[float] = None
     rail: str = "UPI"
     is_tripwire: bool = False
+    is_financial: bool = False
+    event_type: str = "PAYMENT_ATTEMPT"
 
 class EgoGraphResponse(BaseModel):
     focal_entity_id: str

@@ -1,5 +1,7 @@
 # Ghost-VPA Remediation Register: Discrepancy Tracking & Resolution
 
+> **Superseded status note (17 Nov 2026):** Historical “FIXED & VERIFIED” entries are not current acceptance evidence. In particular, REM-01/03/04 benchmark claims and the advertised chronological split are withdrawn; no valid comparative benchmark is currently available. See `docs/benchmark-results.md` and `artifacts/step5/CODEX_REMAINING_WORK_REGISTER.md`.
+
 **Branch:** `gems-ghost`  
 **Base Commit:** `c393636`  
 **Date:** 2026-11-15  

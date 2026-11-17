@@ -29,7 +29,7 @@ export default {
         },
         alarm: '#F04438',
         benign: '#2DD4A7',
-        feeder: '#A78BFA',
+        feeder: '#D95926',
         device: '#38BDF8',
       },
       fontFamily: {

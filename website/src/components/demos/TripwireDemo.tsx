@@ -6,9 +6,9 @@ import { useReducedMotion } from '@/lib/hooks';
 const STEPS_A = [
   { phase: 1, title: 'Payment attempt received', detail: 'A UPI P2P attempt enters the bank’s ingress.' },
   { phase: 2, title: 'O(1) canary registry lookup', detail: 'The sidecar checks the beneficiary VPA against the in-memory registry.' },
-  { phase: 3, title: 'Pre-routing intercept', detail: 'Match: the posting instruction is stopped. No debit, no credit.' },
+  { phase: 3, title: 'Simulated tripwire match', detail: 'The synthetic event is marked as a canary interaction; no payment instruction is sent.' },
   { phase: 4, title: 'Sender flagged REVIEW_REQUIRED', detail: 'An operational triage flag. Not a freeze, not an accusation.' },
-  { phase: 5, title: 'Metadata seeded into the graph', detail: 'The event enters temporal analytics as a high-confidence seed.' },
+  { phase: 5, title: 'Interaction added to the graph', detail: 'The synthetic interaction is an investigation signal, not proof of criminality.' },
 ];
 
 const STEPS_C = [

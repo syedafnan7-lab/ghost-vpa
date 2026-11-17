@@ -6,6 +6,8 @@ def test_safety_configuration_invariants():
     """Safety Invariant: Prototype must enforce SIMULATION_MODE_ONLY and reject live rails."""
     assert settings.SIMULATION_MODE_ONLY is True
     assert settings.ALLOW_REAL_PAYMENT_RAILS is False
+    assert settings.API_HOST == "127.0.0.1"
+    assert "*" not in settings.CORS_ORIGINS
 
 def test_zero_real_funds_movement_contract():
     """Safety Invariant: Inbound canary interaction MUST mark zero_funds_transferred = True."""

@@ -56,7 +56,7 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
                   <span className="font-mono text-caption font-bold text-canary">{alerts[0].canary_vpa}</span>
                 </div>
                 <div className="text-micro font-mono text-ink3 mt-0.5 flex items-center gap-3">
-                  <span>Amount: <strong className="text-ink">₹{alerts[0].amount_inr.toLocaleString()}</strong></span>
+                  <span>Attempt amount: <strong className="text-ink">₹{alerts[0].amount_inr.toLocaleString()}</strong></span>
                   <span>•</span>
                   <span>Sender Status: <strong className="text-canary">REVIEW_REQUIRED</strong></span>
                   <span>•</span>
@@ -193,6 +193,7 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
                         )}
                       </td>
                       <td className="py-2.5 px-4 text-ink font-bold tabular-nums">
+                        {ev.simulated_result === 'SETTLED_NORMAL' ? 'Settled: ' : 'Attempt: '}
                         ₹{ev.amount_inr.toLocaleString()}
                       </td>
                       <td className="py-2.5 px-4 text-ink3">{ev.payment_rail}</td>

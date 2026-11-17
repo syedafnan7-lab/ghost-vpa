@@ -37,9 +37,17 @@ async def ingest_payment_attempt(event: PaymentAttemptEvent, db: AsyncSession = 
         event.zero_funds_transferred = True
         sender_status = "REVIEW_REQUIRED"
         await honeypot_registry.record_hit(event.beneficiary_vpa, db)
-    else:
+    elif event.event_type == "CREDIT_CONFIRMED":
         event.simulated_result = "SETTLED_NORMAL"
         event.zero_funds_transferred = False
+        sender_status = "BENIGN"
+    elif event.event_type == "PAYMENT_DECLINED":
+        event.simulated_result = "DECLINED_BENIGN"
+        event.zero_funds_transferred = True
+        sender_status = "BENIGN"
+    else:
+        event.simulated_result = "ATTEMPT_RECORDED"
+        event.zero_funds_transferred = True
         sender_status = "BENIGN"
 
     # 2. Ingest into Temporal Graph (Both Benign and Canary)
@@ -58,6 +66,8 @@ async def ingest_payment_attempt(event: PaymentAttemptEvent, db: AsyncSession = 
         amount_inr=event.amount_inr,
         payment_rail=event.payment_rail,
         attempt_type=event.attempt_type,
+        event_type=getattr(event, "event_type", "PAYMENT_ATTEMPT") or "PAYMENT_ATTEMPT",
+        original_event_id=getattr(event, "original_event_id", None),
         device_token=event.device_token,
         ip_subnet=event.ip_subnet,
         is_canary_hit=is_canary,
@@ -95,6 +105,13 @@ async def ingest_payment_attempt(event: PaymentAttemptEvent, db: AsyncSession = 
         )
         db.add(alert_db)
 
+        # Resolve network attribution from temporal graph
+        attribution = temporal_graph.attribute_case_network(event.sender_account_id, sim_time)
+        cluster_id = attribution.get("cluster_id")
+        feeder_id = attribution.get("feeder_id")
+        mule_count = attribution.get("connected_mule_count", 0)
+        all_feeders = attribution.get("all_feeders", [])
+
         # Create or update Investigation Case Dossier under RBI 60-Day SOP
         case_id = f"CASE-{uuid.uuid4().hex[:8].upper()}"
         case_db = CaseModel(
@@ -107,18 +124,26 @@ async def ingest_payment_attempt(event: PaymentAttemptEvent, db: AsyncSession = 
             sop_day_counter=1,
             explanation_days_left=20,
             assigned_analyst="analyst_sharma",
+            cluster_id=cluster_id,
+            connected_mule_count=mule_count,
+            upstream_feeder_account=feeder_id,
             created_at=sim_time,
             updated_at=sim_time,
             analyst_notes_json=json.dumps([
-                f"[{sim_time.strftime('%H:%M:%S')}] Tripwire triggered: Attempt of ₹{event.amount_inr:,.2f} on {event.beneficiary_vpa}. Zero funds moved."
+                f"[{sim_time.strftime('%H:%M:%S')}] Tripwire triggered: Attempt of ₹{event.amount_inr:,.2f} on {event.beneficiary_vpa}. Zero funds moved.",
+                f"[{sim_time.strftime('%H:%M:%S')}] Network attribution: Upstream Feeder={feeder_id or 'None'}, Cluster={cluster_id or 'Isolated'}, Connected Mules={mule_count}."
             ]),
             audit_hash="GENESIS_CASE_HASH",
-            fiu_str_narrative=f"Suspicious Transaction Report narrative: Account {event.sender_account_id} initiated a probe targeting regulatory canary VPA {event.beneficiary_vpa}. Zero funds routed. Temporal analysis initiated.",
+            fiu_str_narrative=f"STR Narrative: Account {event.sender_account_id} probed canary {event.beneficiary_vpa}. Temporal graph analysis attributes funding to upstream feeder {feeder_id or 'None / Unattributed'} in syndicate cluster {cluster_id or 'ISOLATED'} with {mule_count} connected mule accounts. Zero funds transferred across payment rail.",
             ncrp_payload_json=json.dumps({
                 "suspect_account": event.sender_account_id,
                 "suspect_bank": event.sender_bank,
                 "incident_type": "MONEY_MULE_PROBE",
-                "canary_triggered": event.beneficiary_vpa
+                "canary_triggered": event.beneficiary_vpa,
+                "upstream_feeder": feeder_id,
+                "all_feeders": all_feeders,
+                "syndicate_cluster_id": cluster_id,
+                "connected_mule_count": mule_count
             })
         )
         db.add(case_db)
@@ -158,7 +183,7 @@ async def ingest_payment_attempt(event: PaymentAttemptEvent, db: AsyncSession = 
 
     # 5. Broadcast to WebSocket clients
     await ws_manager.broadcast({
-        "type": "PAYMENT_ATTEMPT",
+        "type": event.event_type,
         "data": {
             "event_id": event.event_id,
             "timestamp": sim_time.isoformat(),
@@ -187,5 +212,7 @@ async def ingest_payment_attempt(event: PaymentAttemptEvent, db: AsyncSession = 
         is_canary_hit=is_canary,
         sender_status=sender_status,
         latency_ms=round(latency_ms, 2),
-        message="Canary tripwire intercepted! Zero funds moved; sender tagged REVIEW_REQUIRED." if is_canary else "Standard payment attempt recorded."
+        message=("Canary interaction recorded; Zero funds moved; sender tagged REVIEW_REQUIRED." if is_canary
+                 else "Confirmed credit recorded." if event.event_type == "CREDIT_CONFIRMED"
+                 else "Event recorded; no funds were transferred.")
     )

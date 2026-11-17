@@ -6,6 +6,7 @@ import { api } from '../services/api';
 export const ModelBenchmarking: React.FC = () => {
   const [metrics, setMetrics] = useState<BenchmarkMetrics | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [unavailable, setUnavailable] = useState<boolean>(false);
 
   useEffect(() => {
     const loadBenchmarks = async () => {
@@ -14,6 +15,7 @@ export const ModelBenchmarking: React.FC = () => {
         setMetrics(data);
       } catch (e) {
         console.error('Failed to load benchmarks', e);
+        setUnavailable(true);
       } finally {
         setLoading(false);
       }
@@ -21,7 +23,7 @@ export const ModelBenchmarking: React.FC = () => {
     loadBenchmarks();
   }, []);
 
-  if (loading || !metrics) {
+  if (loading) {
     return (
       <div className="space-y-6" aria-busy="true" aria-live="polite">
         <div className="bg-panel border border-line rounded-panel p-5">
@@ -55,6 +57,22 @@ export const ModelBenchmarking: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (unavailable || !metrics) {
+    return (
+      <div className="rounded-panel border border-canary/30 bg-panel p-6" role="status">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-canary" aria-hidden="true" />
+          <div>
+            <h3 className="font-display text-sm font-medium text-ink">Benchmark results withdrawn</h3>
+            <p className="mt-2 max-w-3xl text-caption leading-relaxed text-ink2">
+              The previous synthetic evaluation used generated label-correlated features and did not build a payment graph. Its split was not chronological, so its performance metrics are not shown. A timestamped graph benchmark with benign canary interactions is still needed.
+            </p>
+          </div>
         </div>
       </div>
     );

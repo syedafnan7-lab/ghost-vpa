@@ -1,5 +1,7 @@
 # GHOST-VPA — FINAL REMEDIATION & HARDENING REPORT
 
+> **Superseded notice (17 Nov 2026):** This is a historical report. Its benchmark methodology and results were independently found invalid because the generator used label-correlated features, constructed no graph, had no timestamps, and split by row order. The reported accuracy, precision, recall, AUC, FPR, feature-importance, and latency figures are withdrawn and must not be presented as performance evidence. See `artifacts/step5/CODEX_COMPLETE_PROJECT_REVIEW.md` and `docs/benchmark-results.md` for the current assessment.
+
 **Project:** Ghost-VPA — Bank-Controlled Honeypot VPAs & Canary-Seeded Graph Intelligence  
 **Hackathon:** St Aloysius × RBIH FinTech Innovation Hackathon 2026 (Track 1)  
 **Branch:** `gems-ghost`  

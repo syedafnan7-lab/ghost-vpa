@@ -30,6 +30,8 @@ class PaymentEventModel(Base):
     amount_inr = Column(Float, nullable=False)
     payment_rail = Column(String(16), default="UPI")
     attempt_type = Column(String(32), default="P2P")
+    event_type = Column(String(32), default="PAYMENT_ATTEMPT")
+    original_event_id = Column(String(64), nullable=True)
     device_token = Column(String(64), index=True, nullable=False)
     ip_subnet = Column(String(32), nullable=False)
     is_canary_hit = Column(Boolean, default=False, index=True)

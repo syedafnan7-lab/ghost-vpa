@@ -243,7 +243,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
               <div className="text-center py-8 text-ink3 text-caption font-mono bg-void/40 rounded-card border border-line/60">
                 Awaiting canary interactions.
                 <div className="mt-1">
-                  Click any scenario above to trigger an intercepted attack vector.
+                  Run a synthetic scenario to populate the local simulation view.
                 </div>
               </div>
             ) : (
@@ -293,10 +293,10 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
               <div className="flex items-center justify-between pb-3 border-b border-line">
                 <div className="flex items-center gap-2">
                   <Scale className="w-4 h-4 text-canary" />
-                  <h3 className="font-display text-sm font-semibold text-ink">RBI Annex III Mule SOP</h3>
+                  <h3 className="font-display text-sm font-semibold text-ink">Draft SOP Timeline Simulation</h3>
                 </div>
                 <span className="font-mono text-[10px] px-2 py-0.5 rounded-chip bg-benign/15 text-benign border border-benign/30 font-semibold">
-                  100% SLA COMPLIANT
+                  PROTOTYPE FIELDS
                 </span>
               </div>
 
@@ -308,9 +308,9 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-mono text-micro text-ink font-semibold block">STAGE 1: PRE-ROUTING INTERCEPT</span>
+                    <span className="font-mono text-micro text-ink font-semibold block">STAGE 1: SYNTHETIC CANARY MATCH</span>
                     <p className="font-sans text-micro text-ink3 leading-relaxed mt-0.5">
-                      Canary debits halted at sidecar filter. Zero real funds routed to mule networks.
+                      A synthetic interaction creates REVIEW_REQUIRED. No live payment is intercepted.
                     </p>
                   </div>
                 </div>
@@ -321,9 +321,9 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-mono text-micro text-ink font-semibold block">STAGE 2: 20-DAY CUSTOMER NOTICE</span>
+                    <span className="font-mono text-micro text-ink font-semibold block">STAGE 2: DRAFT-PROPOSAL TIMELINE</span>
                     <p className="font-sans text-micro text-ink3 leading-relaxed mt-0.5">
-                      Statutory explanation window allowing unwitting victims to refute syndicate nexus.
+                      A displayed simulation value; September 2026 RBI KYC amendment directions remain a draft proposal.
                     </p>
                   </div>
                 </div>
@@ -334,9 +334,9 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-mono text-micro text-ink font-semibold block">STAGE 3: 60-DAY MAXIMUM HOLD</span>
+                    <span className="font-mono text-micro text-ink font-semibold block">STAGE 3: HOLD ACTION DISABLED</span>
                     <p className="font-sans text-micro text-ink3 leading-relaxed mt-0.5">
-                      Strict statutory freeze cutoff. Automatically produces STIX 2.1 &amp; FIU-IND STR bundles.
+                      No hold or external filing is performed. Generated STIX/FIU/NCRP content is prototype output only.
                     </p>
                   </div>
                 </div>

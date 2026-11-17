@@ -10,8 +10,8 @@ const FORCES = [
   },
   {
     label: 'Tabular blindspots',
-    body: 'Transaction-only anomaly models score one payment against one profile. A burst of activity reads as fraud whether it is a mule or a busy merchant. The project brief cites production monitoring false-positive rates above 70%.',
-    figure: '> 70% false alerts',
+    body: 'Transaction-only anomaly models score one payment against one profile. A burst of activity can look similar across a mule and a busy merchant; this prototype has not measured production false-positive rates.',
+    figure: 'context is missing',
   },
   {
     label: 'Upstream invisibility',

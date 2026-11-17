@@ -86,6 +86,7 @@ class PaymentRailSimulator:
             amount_inr=amount,
             payment_rail="UPI",
             attempt_type="P2P" if amount < 5000 else "P2M",
+            event_type="CREDIT_CONFIRMED",
             device_token=dev_tok,
             ip_subnet=f"192.168.{random.randint(1, 50)}.0/24"
         )
@@ -142,6 +143,7 @@ class PaymentRailSimulator:
                     beneficiary_vpa=vpa,
                     beneficiary_bank=bank,
                     amount_inr=45000.00,
+                    event_type="CREDIT_CONFIRMED",
                     payment_rail="IMPS",
                     attempt_type="P2P",
                     device_token="DEV_TOK_FEEDER_99",
@@ -190,6 +192,7 @@ class PaymentRailSimulator:
                     beneficiary_vpa="freshfoods.merchant@icixbank",
                     beneficiary_bank="ICIX",
                     amount_inr=round(random.uniform(800.0, 4500.0), 2),
+                    event_type="CREDIT_CONFIRMED",
                     payment_rail="UPI",
                     attempt_type="P2M",
                     device_token=f"DEV_TOK_CUST_{i}",
@@ -222,6 +225,7 @@ class PaymentRailSimulator:
                     beneficiary_vpa=benef if is_canary else f"{benef.lower()}@bank",
                     beneficiary_bank="SBINX",
                     amount_inr=amt,
+                    event_type="PAYMENT_ATTEMPT" if is_canary else "CREDIT_CONFIRMED",
                     payment_rail="UPI",
                     attempt_type="P2P",
                     device_token="DEV_TOK_MULTIHOP_CHAIN",

@@ -14,11 +14,11 @@ const INVARIANTS = [
   },
   {
     title: 'No automatic guilt',
-    body: 'A canary hit sets REVIEW_REQUIRED. Holds and outreach need a human supervisor and run inside the RBI 20-day explanation window.',
+    body: 'A canary interaction sets REVIEW_REQUIRED. Formal holds are disabled. The September 2026 RBI KYC amendment directions remain a draft proposal.',
   },
   {
     title: 'Zero NPCI switch changes',
-    body: 'The design is an internal CBS/PSP sidecar over read-only metadata. No change to the UPI switch, the Central Mapper or ISO 8583 flows.',
+    body: 'The prototype has no live switch connection or production change. A CBS/PSP sidecar is only a proposed architecture that requires formal review.',
   },
 ];
 
@@ -26,7 +26,7 @@ const STATUS_ROWS = [
   { capability: 'Simulated multi-bank rail & scenarios A–D', status: 'Implemented', tone: 'text-benign' },
   { capability: 'Canary registry & pre-routing tripwire', status: 'Implemented (simulated)', tone: 'text-benign' },
   { capability: 'Temporal graph, motifs & CS-LP', status: 'Implemented (in-memory)', tone: 'text-benign' },
-  { capability: '100,000-node benchmark', status: 'Implemented (synthetic)', tone: 'text-benign' },
+  { capability: 'Comparative detection benchmark', status: 'Withdrawn pending valid evaluation', tone: 'text-canary' },
   { capability: 'Analyst workbench & D3 explorer', status: 'Implemented', tone: 'text-benign' },
   { capability: 'Live CBS / PSP event mirror', status: 'Proposed pilot', tone: 'text-feeder' },
   { capability: 'GL lien / suspense routing', status: 'Proposed pilot', tone: 'text-feeder' },
@@ -69,9 +69,9 @@ export function Boundaries() {
           <p className="mt-3 max-w-4xl text-body text-ink2">
             The RBI September 2026 KYC Amendment Directions are a{' '}
             <span className="text-ink">draft proposal</span> published for consultation on
-            11 September 2026, with commencement targeted for 1 April 2027. They are not an enacted,
-            active statutory mandate. Ghost-VPA cites them as design context for the 60-day hold and
-            the 20-day explanation window — not as an existing obligation, and not as an approval.
+            11 September 2026. They are not an enacted,
+            active statutory mandate. The prototype's 60-day and 20-day values are illustrative fields,
+            not current obligations, legal advice, or an approval.
           </p>
         </div>
       </Reveal>

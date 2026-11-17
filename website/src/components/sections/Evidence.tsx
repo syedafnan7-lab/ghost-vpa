@@ -45,7 +45,7 @@ export function Evidence() {
       index="05"
       kicker="The evidence"
       title="Evidence a supervisor can defend"
-      lede="A flag is not a case. Every canary hit compiles into a dossier with a statutory countdown, a structured narrative and machine-readable threat indicators."
+      lede="A synthetic canary interaction can create a prototype case dossier with graph attribution and machine-readable preview data."
     >
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <Reveal>
@@ -66,7 +66,7 @@ export function Evidence() {
             <div className="grid gap-px border-b border-line bg-line md:grid-cols-2">
               <div className="bg-panel px-5 py-4">
                 <div className="flex items-baseline justify-between">
-                  <span className="font-mono text-caption text-ink2">RBI 60-day hold</span>
+                  <span className="font-mono text-caption text-ink2">Prototype timeline</span>
                   <span className="font-mono text-caption text-canary">
                     day {dossier.sopDay} / 60
                   </span>
@@ -189,9 +189,10 @@ export function Evidence() {
               Proportionate, not punitive
             </h3>
             <p className="mt-2 text-body text-ink2">
-              A canary hit sets <span className="font-mono text-alarm">REVIEW_REQUIRED</span>. Formal
-              holds and customer outreach require a human supervisor and run inside the RBI 20-day
-              explanation window. The system does not freeze, accuse or message anyone on its own.
+              A canary interaction sets <span className="font-mono text-alarm">REVIEW_REQUIRED</span>.
+              All case mutations are disabled because authentication is not configured. The RBI
+              September 2026 KYC amendment directions remain a draft proposal; these timers are
+              simulation fields, not statutory deadlines.
             </p>
           </article>
 
@@ -202,7 +203,7 @@ export function Evidence() {
             <p className="mt-2 text-body text-ink2">
               The STIX 2.1 bundle carries{' '}
               <span className="font-mono text-canary">x_ghostvpa_synthetic: true</span> on every
-              indicator, with confidence 95. It is a format demonstration, not a live feed.
+              indicator. It is a prototype format demonstration, not a live feed or independently validated STIX export.
             </p>
           </article>
         </Reveal>

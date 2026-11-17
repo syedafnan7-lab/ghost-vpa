@@ -49,11 +49,11 @@ export const HoneypotRegistry: React.FC<HoneypotRegistryProps> = ({
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-canary" />
             <h3 className="font-display font-medium text-ink text-sm">
-              Bank-Designated Regulatory Honeypot &amp; Consented Turncoat Vault
+              Synthetic Canary Registry
             </h3>
           </div>
           <p className="font-sans text-caption text-ink2 mt-1 max-w-3xl leading-relaxed">
-            All endpoints are strictly non-routable synthetic canary tokens. In production, these include bank operational endpoints and customer-surrendered VPAs under the RBI Annex III 20-day explanation window. Beneficiary name lookup authenticates normally while outgoing debits remain permanently locked at 0.
+            This inventory contains synthetic canary identifiers only. Bank endpoints, customer-surrendered VPAs, beneficiary lookup, and production payment behavior are not integrated or legally validated here. The September 2026 RBI KYC amendment directions remain a draft proposal.
           </p>
         </div>
 

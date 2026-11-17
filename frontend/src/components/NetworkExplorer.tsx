@@ -117,7 +117,7 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
       .append('line')
       .attr('stroke', d => d.is_tripwire ? '#ef4444' : '#475569')
       .attr('stroke-width', d => d.is_tripwire ? 2.5 : Math.max(1, Math.min(4, d.amount_inr / 15000)))
-      .attr('stroke-dasharray', d => d.is_tripwire ? '4 2' : 'none')
+      .attr('stroke-dasharray', d => d.is_tripwire || !d.is_financial ? '4 2' : 'none')
       .attr('marker-end', 'url(#arrowhead)');
 
     // Node groups
@@ -159,12 +159,12 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
     // tripwire raises a triage flag (REVIEW_REQUIRED), it is not a confirmed
     // classification, and colouring it like one would overstate the evidence.
     const NODE_HUE: Record<string, string> = {
-      DEVICE_TOKEN: '#3987e5', // slot 1 — blue
-      FEEDER_NODE:  '#d95926', // slot 2 — orange
+      DEVICE_TOKEN: '#38BDF8', // slot 1 — blue
+      FEEDER_NODE:  '#D95926', // slot 2 — orange
     };
-    const HUE_BENIGN = '#199e70'; // slot 3 — aqua
-    const HUE_CANARY = '#f59e0b'; // reserved accent, paired with hexagon form
-    const INK_TRIAGE = '#e2e8f0'; // neutral ink, paired with square form
+    const HUE_BENIGN = '#2DD4A7'; // slot 3 — aqua
+    const HUE_CANARY = '#F5A524'; // reserved accent, paired with hexagon form
+    const INK_TRIAGE = '#E8EEF7'; // neutral ink, paired with square form
 
     const nodeRadius = (d: GraphNodeItem) =>
       d.is_seed ? 18 : d.type === 'FEEDER_NODE' ? 16 : 13;
@@ -342,9 +342,7 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <svg width="12" height="12" viewBox="-6 -6 12 12" aria-hidden="true">
-              <polygon points="6,0 3,5.196 -3,5.196 -6,0 -3,-5.196 3,-5.196" fill="#A78BFA" stroke="#04070C" strokeWidth="1" />
-            </svg>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#D95926] inline-block" />
             <span className="text-ink">Upstream Feeder</span>
           </div>
 

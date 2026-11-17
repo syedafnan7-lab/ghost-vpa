@@ -5,19 +5,18 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Build-Passing-emerald)](https://github.com)
 
-> **Ghost-VPA** is a bank-controlled CBS/PSP fraud-intelligence layer that uses bank-designated regulatory honeypot VPAs as canary endpoints. By coupling instant tripwire detection with canary-seeded temporal graph analytics, Ghost-VPA intercepts and exposes money-mule rings before stolen funds can be cashed out—without modifying NPCI's core UPI switch or minting synthetic KYC accounts.
+> **Ghost-VPA** is a simulation prototype exploring bank-controlled canary payment identifiers and canary-seeded temporal graph investigation. It demonstrates synthetic interaction events, review triage, and graph-derived upstream candidates. It has no live bank, NPCI, UPI, IMPS, or payment-gateway integration; operational feasibility and detection value remain unvalidated.
 
 ---
 
 ## 1. Key Value Proposition & Problem Solved
 
-- **The Problem:** Domestic payments fraud in India exploits rapid multi-hop UPI and IMPS layering. Stolen funds move through dormant "sleeper" mule accounts and exit via ATMs within minutes. Transaction-by-transaction anomaly models suffer from $>70\%$ false-positive rates, mistakenly freezing innocent citizens while missing upstream syndicate feeder hubs.
-- **The Solution:** Ghost-VPA introduces active cyber-deception into domestic banking rails. Bank-designated and customer-consented canary VPAs (under the RBI September 2026 Draft KYC Directions Annex III SOP) act as high-confidence tripwires.
+- **The Problem:** Domestic payments fraud in India exploits rapid multi-hop UPI and IMPS layering. Stolen funds move through dormant "sleeper" mule accounts and exit via ATMs within minutes. Transaction-by-transaction anomaly models suffer from high false-positive rates, mistakenly freezing innocent citizens while missing upstream syndicate feeder hubs.
+- **The Solution:** Ghost-VPA introduces active cyber-deception into domestic banking rails. Bank-designated internal canary VPAs (mapped to internal General Ledger suspense accounts under the Draft RBI September 2026 KYC Directions Annex III SOP) act as high-confidence tripwires.
 - **The Result:**
-  - **$< 5\text{ ms}$** instant tripwire alert on canary interaction.
-  - **Zero Real Funds Movement** (pre-routing sidecar filter prevents core posting).
-  - **Canary-Seeded Graph Propagation** traces connected accounts, upstream feeders, and layering chains across a 72-hour temporal window.
-  - **$99.5\%$ Precision** (+27.1% lift over Tabular LightGBM) and **$94.4\%$ reduction in false-positive rate** (0.1% FPR vs 1.4% Tabular and 12.1% Rules) on a 100,000-node benchmark.
+  - Synthetic canary interactions create a `REVIEW_REQUIRED` triage case.
+  - Directed propagation over confirmed synthetic credits identifies upstream candidates in constructed graph scenarios.
+  - These are prototype behaviors, not measured fraud detection performance or production integration capabilities.
 
 ---
 
@@ -25,7 +24,7 @@
 
 1. **Zero Real Fund Movement:** Completely simulated payment rail; no live switch connections, no live penny-drops, no escrow cash movement.
 2. **KYC & PMLA Compliance:** No synthetic customer KYC profiles or fake identity documents. All demo entities use pseudonymous identifiers (`ACCT_SYNTH_XXXX`).
-3. **Proportionate Triage (No Auto-Guilt):** Canary hits mark senders as `REVIEW_REQUIRED`. Formal holds and outreach are governed by human supervisors under the RBI 20-day customer explanation window.
+3. **Proportionate Triage (No Auto-Guilt):** Canary hits mark senders as `REVIEW_REQUIRED`. Formal holds are disabled in this prototype. The September 2026 RBI KYC amendment directions remain a draft proposal.
 4. **Zero NPCI Switch Changes:** Operates purely as an internal CBS/PSP sidecar.
 
 ---
@@ -78,7 +77,7 @@ cd ..
 
 # Option B: Run services in two separate terminals
 # Terminal 1: Backend
-python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 
 # Terminal 2: Frontend
 cd frontend
@@ -90,10 +89,10 @@ Open **`http://localhost:5173`** in your browser. API docs available at **`http:
 
 ## 5. Four Demonstration Scenarios
 
-1. **Scenario A — Honeypot Tripwire:** Synthetic sender attempts transfer to `canary.trap.01@icixbank`. Instant alert triggers in $<5\text{ms}$, sender marked `REVIEW_REQUIRED`, zero funds moved.
-2. **Scenario B — Shared Upstream Feeder:** Three distinct mules target two different canaries. Graph analytics traces backward to unmask a single upstream syndicate feeder node (`FEEDER_SYNTH_007`).
-3. **Scenario C — Benign Lookalike (False-Positive Reduction):** High-volume bursty merchant activity mimics fraud on transaction rules; graph engine proves zero connectivity to syndicate clusters, preventing a wrongful hold.
-4. **Scenario D — Multi-Hop Layering Chain:** A 4-hop syndicate transfer sequence ($Feeder \to Mule_1 \to Mule_2 \to Mule_3 \to Canary$) reveals inter-hop delta-t velocity ($< 15\text{ mins}$) and amount conservation.
+1. **Scenario A — Synthetic Canary Interaction:** A synthetic event targets `canary.trap.01@icixbank`, producing `REVIEW_REQUIRED`; no live payment occurs.
+2. **Scenario B — Shared Funding Topology:** Synthetic confirmed-credit edges and canary interaction events illustrate upstream candidate attribution in a constructed graph.
+3. **Scenario C — Benign Lookalike:** Synthetic merchant activity provides a topology example. It does not demonstrate a measured false-positive reduction.
+4. **Scenario D — Multi-Hop Example:** Synthetic confirmed credits followed by a canary attempt illustrate temporal graph propagation; the attempt is not treated as a completed transfer.
 
 ---
 
@@ -103,8 +102,7 @@ Open **`http://localhost:5173`** in your browser. API docs available at **`http:
 # Run complete test suite (unit, integration, safety invariants)
 pytest tests/ -v
 
-# Run 100,000-node ML benchmark evaluation
-python -m backend.app.ml.benchmark
+# The previous synthetic benchmark was withdrawn; results are disabled pending valid evaluation.
 ```
 
 ---

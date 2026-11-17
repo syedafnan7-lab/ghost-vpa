@@ -240,10 +240,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Role Switcher (Simulated RBAC) */}
+          {/* Demo role selector (not authentication) */}
           <div 
             className="flex items-center gap-1.5 bg-panel/80 px-2 py-1 rounded-chip border border-line text-caption font-mono"
-            title="Demonstration Role-Based Action Gating (Simulated RBAC)"
+            title="Demo label only; it does not authenticate or authorize a user"
           >
             <UserCheck className="w-3.5 h-3.5 text-canary" />
             <select
@@ -252,7 +252,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="bg-transparent text-micro text-ink font-medium focus:outline-none cursor-pointer"
             >
               <option value="Analyst" className="bg-panel text-ink">Analyst</option>
-              <option value="Supervisor" className="bg-panel text-ink">Supervisor (Hold Auth)</option>
+              <option value="Supervisor" className="bg-panel text-ink">Supervisor (demo)</option>
               <option value="Auditor" className="bg-panel text-ink">Auditor (Read-Only)</option>
             </select>
           </div>

@@ -1,4 +1,5 @@
 import math
+import hashlib
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional, Tuple, Set
 import networkx as nx
@@ -14,11 +15,20 @@ class TemporalGraphEngine:
         self.graph = nx.MultiDiGraph()
         self.canary_nodes: Set[str] = set()
 
-    def add_transaction_edge(self, event: PaymentAttemptEvent):
-        """Ingests transaction into temporal multigraph. Both benign and canary flows are recorded."""
+    def add_transaction_edge(self, event: PaymentAttemptEvent, prune: bool = True):
+        """Ingests transaction into temporal multigraph with strict event semantics.
+
+        Rules:
+        - IDENTIFIER_DISCOVERY / BENEFICIARY_VALIDATION: Records entity/device presence, NO financial edge.
+        - PAYMENT_DECLINED: Records attempt presence, NO financial edge.
+        - PAYMENT_REVERSED: Links to original_event_id and neutralizes previous financial transfer.
+        - PAYMENT_ATTEMPT / CREDIT_CONFIRMED: Adds directed payment edge (amount > 0).
+        """
         u = event.sender_account_id
         # If target is canary, node id is the canary VPA
         v = event.beneficiary_vpa if event.is_canary_hit else (event.beneficiary_account_id or event.beneficiary_vpa)
+
+        event_type = getattr(event, "event_type", "PAYMENT_ATTEMPT") or "PAYMENT_ATTEMPT"
 
         # Ensure sender node exists
         if u not in self.graph:
@@ -47,26 +57,52 @@ class TemporalGraphEngine:
             if event.is_canary_hit:
                 self.canary_nodes.add(v)
 
-        # Add directed payment edge
+        # Add hardware device linkage edge if device token provided
+        if event.device_token:
+            dev_id = f"DEV_{event.device_token}"
+            if dev_id not in self.graph:
+                self.graph.add_node(dev_id, label=dev_id, node_type="DEVICE_TOKEN", is_canary=False)
+            self.graph.add_edge(u, dev_id, key=f"DEV_{event.event_id}", amount_inr=0.0, timestamp=event.timestamp, is_tripwire=False)
+
+        # Handle non-financial event semantics
+        if event_type in ["IDENTIFIER_DISCOVERY", "BENEFICIARY_VALIDATION"]:
+            # Discovery / Lookup does not create a financial fund-flow edge
+            return
+
+        if event_type == "PAYMENT_DECLINED":
+            # Declined payment moved zero funds; do not create financial flow edge
+            return
+
+        if event_type == "PAYMENT_REVERSED":
+            # Reversal: neutralize original transaction edge if present
+            orig_id = getattr(event, "original_event_id", None)
+            if orig_id:
+                for edge_u, edge_v, edge_k, edge_data in list(self.graph.edges(keys=True, data=True)):
+                    if edge_k == orig_id:
+                        self.graph.remove_edge(edge_u, edge_v, key=edge_k)
+                        break
+            return
+
+        # Preserve lifecycle evidence, while only confirmed credits count as
+        # transferred funds. A canary attempt is an interaction seed, not a
+        # completed payment.
+        is_financial = event_type == "CREDIT_CONFIRMED"
         self.graph.add_edge(
             u,
             v,
             key=event.event_id,
-            amount_inr=event.amount_inr,
+            amount_inr=event.amount_inr if is_financial else 0.0,
+            attempted_amount_inr=event.amount_inr,
+            is_financial=is_financial,
             timestamp=event.timestamp,
             payment_rail=event.payment_rail,
             is_tripwire=event.is_canary_hit,
-            device_token=event.device_token
+            device_token=event.device_token,
+            event_type=event_type
         )
 
-        # Add hardware device linkage edge if device token provided
-        dev_id = f"DEV_{event.device_token}"
-        if dev_id not in self.graph:
-            self.graph.add_node(dev_id, label=dev_id, node_type="DEVICE_TOKEN", is_canary=False)
-        self.graph.add_edge(u, dev_id, key=f"DEV_{event.event_id}", amount_inr=0.0, timestamp=event.timestamp, is_tripwire=False)
-
         # Enforce 72-hour sliding window expiration on ingestion
-        if event.timestamp:
+        if prune and event.timestamp:
             self.prune_expired_edges(event.timestamp)
 
     def prune_expired_edges(self, current_sim_time: datetime) -> int:
@@ -74,6 +110,7 @@ class TemporalGraphEngine:
         if current_sim_time.tzinfo is None:
             current_sim_time = current_sim_time.replace(tzinfo=timezone.utc)
         cutoff = current_sim_time - timedelta(hours=self.window_hours)
+
         edges_to_remove = []
 
         for u, v, k, data in self.graph.edges(keys=True, data=True):
@@ -95,9 +132,19 @@ class TemporalGraphEngine:
         return len(edges_to_remove)
 
     def compute_cslp_scores(self, current_sim_time: datetime) -> Dict[str, float]:
-        """Canary-Seeded Label Propagation (CS-LP).
-        Seed canaries S0 = 1.0. Propagates upstream (reverse edges) with exponential temporal decay."""
-        scores: Dict[str, float] = {node: 0.0 for node in self.graph.nodes}
+        """Canary-Seeded Label Propagation (DU-RLP).
+
+        Mathematical Principle:
+        Risk propagates strictly BACKWARD along payment edges (against fund movement direction).
+        An entity earns risk if it transferred money to a known suspect, mule, or canary.
+
+        Zero-in-degree feeder accounts participate fully because they have outbound payment edges.
+        Downstream innocent payees/merchants have no outbound payments to suspects, earning 0.0000.
+        """
+        if current_sim_time.tzinfo is None:
+            current_sim_time = current_sim_time.replace(tzinfo=timezone.utc)
+
+        scores: Dict[str, float] = {node: 0.0 for node in self.graph.nodes if not node.startswith("DEV_")}
         for c in self.canary_nodes:
             if c in scores:
                 scores[c] = 1.0
@@ -105,42 +152,217 @@ class TemporalGraphEngine:
         if not self.canary_nodes:
             return scores
 
-        # Reverse graph for upstream propagation
-        for _ in range(self.CSLP_MAX_ITERATIONS if hasattr(self, 'CSLP_MAX_ITERATIONS') else 15):
+        epsilon = 1e-4
+        max_iterations = getattr(self, "CSLP_MAX_ITERATIONS", 15)
+
+        for _ in range(max_iterations):
             new_scores = scores.copy()
-            for node in self.graph.nodes:
-                if node in self.canary_nodes:
+            max_delta = 0.0
+
+            for node in list(self.graph.nodes):
+                if node in self.canary_nodes or node.startswith("DEV_"):
                     continue
-                # Inbound neighbors in standard graph = successors in reverse traversal
-                in_edges = self.graph.in_edges(node, data=True)
-                if not in_edges:
+
+                # Traverse ONLY outbound payment edges (excluding device nodes)
+                out_edges = [
+                    (u, v, k, d) for u, v, k, d in self.graph.out_edges(node, keys=True, data=True)
+                    if not v.startswith("DEV_")
+                ]
+                if not out_edges:
                     continue
 
                 total_weight = 0.0
                 weighted_sum = 0.0
-                for remitter, _, data in in_edges:
+                for _, benef, _, data in out_edges:
                     t = data.get("timestamp", current_sim_time)
-                    delta_h = max(0.0, (current_sim_time - t).total_seconds() / 3600.0)
-                    w = math.exp(-self.decay_lambda * delta_h)
-                    weighted_sum += w * scores.get(remitter, 0.0)
-                    total_weight += w
+                    if t.tzinfo is None:
+                        t = t.replace(tzinfo=timezone.utc)
+                    # Ignore transactions that have not occurred yet relative to current_sim_time
+                    if t > current_sim_time:
+                        continue
+                    delta_seconds = (current_sim_time - t).total_seconds()
+                    # Ignore transactions outside the sliding window
+                    if delta_seconds > self.window_hours * 3600.0:
+                        continue
 
-                out_edges = self.graph.out_edges(node, data=True)
-                for _, benef, data in out_edges:
-                    t = data.get("timestamp", current_sim_time)
-                    delta_h = max(0.0, (current_sim_time - t).total_seconds() / 3600.0)
-                    w = math.exp(-self.decay_lambda * delta_h)
-                    # Outbound risk influence (connected to known mule/canary)
+                    delta_h = max(0.0, delta_seconds / 3600.0)
+                    amt = data.get("amount_inr", 1000.0)
+
+                    # Only completed transfers carry fund-flow risk. A direct
+                    # canary attempt remains an independent interaction seed.
+                    is_tripwire = data.get("is_tripwire", False)
+                    if not data.get("is_financial", False) and not is_tripwire:
+                        continue
+                    w = 4.0 if is_tripwire else math.exp(-self.decay_lambda * delta_h) * math.log(1.0 + max(0.0, amt) / 100.0)
                     weighted_sum += w * scores.get(benef, 0.0)
                     total_weight += w
 
                 if total_weight > 0:
                     propagated = weighted_sum / total_weight
-                    new_scores[node] = (1.0 - self.restart_alpha) * scores[node] + self.restart_alpha * propagated
+                    updated_val = (1.0 - self.restart_alpha) * scores[node] + self.restart_alpha * propagated
+
+                    # Structural Feeder amplification:
+                    # Root nodes (in_degree == 0 among payment accounts) funding >= 2 suspects receive boost
+                    non_dev_in_degree = sum(1 for p in self.graph.predecessors(node) if not p.startswith("DEV_"))
+                    suspect_benefs = {b for _, b, _, _ in out_edges if scores.get(b, 0.0) > 0.15}
+                    if non_dev_in_degree == 0 and len(suspect_benefs) >= 2:
+                        boost = 1.0 + 0.25 * math.log2(len(suspect_benefs))
+                        updated_val = min(1.0, updated_val * boost)
+
+                    delta = abs(updated_val - scores[node])
+                    if delta > max_delta:
+                        max_delta = delta
+                    new_scores[node] = updated_val
 
             scores = new_scores
+            if max_delta < epsilon:
+                break
 
         return scores
+
+    def attribute_case_network(self, focal_account_id: str, current_sim_time: datetime) -> Dict[str, Any]:
+        """Attributes network context around a focal account (e.g. canary tripper or suspect):
+        1. Identifies upstream feeder candidates (accounts that funded focal_account_id).
+        2. Identifies sibling mules (other accounts funded by the same feeder or sharing devices).
+        3. Computes a deterministic, topology-derived syndicate cluster ID.
+        4. Distinguishes direct interaction from inferred network attribution.
+        """
+        if current_sim_time.tzinfo is None:
+            current_sim_time = current_sim_time.replace(tzinfo=timezone.utc)
+
+        cutoff = current_sim_time - timedelta(hours=self.window_hours)
+
+        def is_active_event_edge(data: Dict[str, Any]) -> bool:
+            timestamp = data.get("timestamp")
+            if timestamp is None:
+                return False
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=timezone.utc)
+            return cutoff <= timestamp <= current_sim_time
+
+        def is_active_payment_edge(data: Dict[str, Any]) -> bool:
+            return (data.get("is_financial", False)
+                    and data.get("amount_inr", 0.0) > 0
+                    and is_active_event_edge(data))
+
+        if focal_account_id not in self.graph:
+            return {
+                "feeder_id": None,
+                "all_feeders": [],
+                "connected_mule_count": 0,
+                "cluster_id": None,
+                "syndicate_members": [],
+                "cslp_score": 0.0,
+                "evidence": {}
+            }
+
+        scores = self.compute_cslp_scores(current_sim_time)
+        focal_score = scores.get(focal_account_id, 0.0)
+
+        # 1. Trace upstream funding predecessors along payment edges (excluding DEV_ nodes)
+        upstream_funding_nodes: Set[str] = set()
+        for pred in self.graph.predecessors(focal_account_id):
+            if pred.startswith("DEV_") or pred in self.canary_nodes:
+                continue
+            edges_dict = self.graph.get_edge_data(pred, focal_account_id) or {}
+            for k, data in edges_dict.items():
+                if is_active_payment_edge(data):
+                    upstream_funding_nodes.add(pred)
+                    break
+
+        # Search 2-hop upstream if focal account was funded through a layering node
+        extended_feeders: Set[str] = set(upstream_funding_nodes)
+        for u_node in list(upstream_funding_nodes):
+            for grand_pred in self.graph.predecessors(u_node):
+                if not grand_pred.startswith("DEV_") and grand_pred not in self.canary_nodes:
+                    edges_dict = self.graph.get_edge_data(grand_pred, u_node) or {}
+                    for k, data in edges_dict.items():
+                        if is_active_payment_edge(data):
+                            extended_feeders.add(grand_pred)
+                            break
+
+        # Rank candidate feeders: prefer root nodes (in_degree == 0), then disbursed volume, then out-degree
+        candidate_feeders = []
+        for f in extended_feeders:
+            in_deg = sum(1 for p in self.graph.predecessors(f) if not p.startswith("DEV_"))
+            out_deg = sum(1 for s in self.graph.successors(f) if not s.startswith("DEV_"))
+            score = scores.get(f, 0.0)
+            total_disbursed = 0.0
+            for _, s, _, d in self.graph.out_edges(f, keys=True, data=True):
+                if not s.startswith("DEV_") and is_active_payment_edge(d):
+                    total_disbursed += d.get("amount_inr", 0.0)
+            candidate_feeders.append({
+                "feeder_id": f,
+                "in_degree": in_deg,
+                "out_degree": out_deg,
+                "score": score,
+                "total_disbursed": total_disbursed
+            })
+
+        candidate_feeders.sort(
+            key=lambda x: (1 if x["in_degree"] == 0 else 0, x["total_disbursed"], x["out_degree"]),
+            reverse=True
+        )
+
+        primary_feeder = candidate_feeders[0]["feeder_id"] if candidate_feeders else None
+        all_feeders = [cf["feeder_id"] for cf in candidate_feeders]
+
+        # 2. Identify connected sibling mules
+        sibling_mules: Set[str] = set()
+        for f in all_feeders:
+            for _, succ, _, edge_data in self.graph.out_edges(f, keys=True, data=True):
+                if (succ != focal_account_id and not succ.startswith("DEV_")
+                        and succ not in self.canary_nodes and is_active_payment_edge(edge_data)):
+                    sibling_mules.add(succ)
+
+        # Also identify mules linked via shared device tokens
+        shared_devices: Set[str] = set()
+        for _, succ, _, edge_data in self.graph.out_edges(focal_account_id, keys=True, data=True):
+            if succ.startswith("DEV_") and is_active_event_edge(edge_data):
+                shared_devices.add(succ)
+                for other, _, _, other_edge in self.graph.in_edges(succ, keys=True, data=True):
+                    if (other != focal_account_id and not other.startswith("DEV_")
+                            and other not in self.canary_nodes and is_active_event_edge(other_edge)):
+                        sibling_mules.add(other)
+
+        connected_mule_count = len(sibling_mules)
+
+        # 3. Generate defensible syndicate cluster ID
+        # A cluster is formed only if there is genuine multi-node syndicate structure
+        # (e.g. at least one upstream feeder, or at least one sibling mule)
+        cluster_id = None
+        if primary_feeder is not None or len(sibling_mules) > 0:
+            syndicate_members: Set[str] = {focal_account_id}
+            if primary_feeder:
+                syndicate_members.update(all_feeders)
+            syndicate_members.update(sibling_mules)
+            syndicate_members.update(shared_devices)
+
+            sorted_members = sorted(list(syndicate_members))
+            comp_hash = hashlib.sha256(":".join(sorted_members).encode("utf-8")).hexdigest()[:8].upper()
+            cluster_id = f"CLUST-SYN-{comp_hash}"
+        else:
+            syndicate_members = {focal_account_id}
+
+        return {
+            "feeder_id": primary_feeder,
+            "all_feeders": all_feeders,
+            "connected_mule_count": connected_mule_count,
+            "cluster_id": cluster_id,
+            "syndicate_members": sorted(list(syndicate_members)),
+            "cslp_score": round(focal_score, 4),
+            "evidence": {
+                "primary_feeder": primary_feeder,
+                "all_feeders": all_feeders,
+                "connected_mules": sorted(list(sibling_mules)),
+                "shared_devices": sorted(list(shared_devices)),
+                "direct_canary_hit": focal_account_id in self.graph and any(
+                    succ in self.canary_nodes and any(is_active_event_edge(edge_data) and edge_data.get("is_tripwire")
+                        for edge_data in (self.graph.get_edge_data(focal_account_id, succ) or {}).values())
+                    for succ in self.graph.successors(focal_account_id)
+                )
+            }
+        }
 
     def detect_motifs(self, focal_entity_id: str, current_sim_time: datetime) -> List[Dict[str, Any]]:
         """Detects rapid fan-in, rapid fan-out, high velocity pass-through, and feeder funnels."""
@@ -269,7 +491,9 @@ class TemporalGraphEngine:
                     amount_inr=data.get("amount_inr", 0.0),
                     timestamp=data.get("timestamp", current_sim_time),
                     rail=data.get("payment_rail", "UPI"),
-                    is_tripwire=data.get("is_tripwire", False)
+                    is_tripwire=data.get("is_tripwire", False),
+                    is_financial=data.get("is_financial", False),
+                    event_type=data.get("event_type", "PAYMENT_ATTEMPT")
                 ))
 
         # Only retain nodes that are either focal or incident to an active edge

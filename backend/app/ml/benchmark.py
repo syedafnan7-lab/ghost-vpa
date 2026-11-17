@@ -60,8 +60,21 @@ class BenchmarkRunner:
         self._cached_results: BenchmarkResultsResponse = None
 
     def run_benchmark(self, force_refresh: bool = False) -> BenchmarkResultsResponse:
+        raise NotImplementedError(
+            "The historical synthetic benchmark is withdrawn: it lacks graph construction, event timestamps, and a valid chronological split."
+        )
+
         if self._cached_results and not force_refresh:
             return self._cached_results
+
+        cached_file = Path("docs/remediation/latest-benchmark-results.json")
+        if not force_refresh and cached_file.exists():
+            try:
+                with open(cached_file, "r", encoding="utf-8") as f:
+                    self._cached_results = BenchmarkResultsResponse.model_validate_json(f.read())
+                    return self._cached_results
+            except Exception:
+                pass
 
         nodes_df, events_df = generate_synthetic_100k_network(seed=42)
 
@@ -244,26 +257,6 @@ class BenchmarkRunner:
 benchmark_runner = BenchmarkRunner()
 
 if __name__ == "__main__":
-    print("=" * 70)
-    print("GHOST-VPA: 100,000-NODE MACHINE LEARNING BENCHMARK EXECUTION")
-    print("=" * 70)
-    res = benchmark_runner.run_benchmark(force_refresh=True)
-    print(f"Dataset: {res.dataset_name}")
-    print(f"Entities: {res.total_nodes:,} | Events: {res.total_edges:,}")
-    print(f"Protocol: {res.evaluation_protocol}\n")
-
-    print(f"{'Metric':<28} | {'Rules Heuristic':<16} | {'Tabular LightGBM':<18} | {'Graph Challenger':<18}")
-    print("-" * 88)
-    print(f"{'Precision':<28} | {res.rules_baseline.precision*100:>15.1f}% | {res.tabular_baseline.precision*100:>17.1f}% | {res.graph_enhanced.precision*100:>17.1f}%")
-    print(f"{'Recall':<28} | {res.rules_baseline.recall*100:>15.1f}% | {res.tabular_baseline.recall*100:>17.1f}% | {res.graph_enhanced.recall*100:>17.1f}%")
-    print(f"{'F1-Score':<28} | {res.rules_baseline.f1_score:>16.3f} | {res.tabular_baseline.f1_score:>18.3f} | {res.graph_enhanced.f1_score:>18.3f}")
-    print(f"{'PR-AUC':<28} | {res.rules_baseline.pr_auc:>16.3f} | {res.tabular_baseline.pr_auc:>18.3f} | {res.graph_enhanced.pr_auc:>18.3f}")
-    print(f"{'ROC-AUC':<28} | {res.rules_baseline.roc_auc:>16.3f} | {res.tabular_baseline.roc_auc:>18.3f} | {res.graph_enhanced.roc_auc:>18.3f}")
-    print(f"{'False Positive Rate (FPR)':<28} | {res.rules_baseline.false_positive_rate*100:>15.1f}% | {res.tabular_baseline.false_positive_rate*100:>17.1f}% | {res.graph_enhanced.false_positive_rate*100:>17.1f}%")
-    print(f"{'Inference Latency (p50)':<28} | {res.rules_baseline.p50_latency_ms:>13.4f} ms | {res.tabular_baseline.p50_latency_ms:>15.4f} ms | {res.graph_enhanced.p50_latency_ms:>15.4f} ms")
-    print(f"{'Inference Latency (p99)':<28} | {res.rules_baseline.p99_latency_ms:>13.4f} ms | {res.tabular_baseline.p99_latency_ms:>15.4f} ms | {res.graph_enhanced.p99_latency_ms:>15.4f} ms")
-    print("-" * 88)
-    print(f"Empirical Precision Lift: +{res.precision_lift_pct}%")
-    print(f"Empirical FPR Reduction: -{res.fpr_reduction_pct}%")
-    print(f"Results saved to: docs/remediation/latest-benchmark-results.json")
-    print("=" * 70)
+    raise SystemExit(
+        "Benchmark disabled: historical synthetic results are withdrawn pending a valid graph-based evaluation."
+    )

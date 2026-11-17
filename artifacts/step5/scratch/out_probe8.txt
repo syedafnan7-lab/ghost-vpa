@@ -1,0 +1,73 @@
+### BENCHMARK DATAFRAME INTEGRITY ###
+  nodes_df:     shape=(100000, 4) cols=['node_id', 'node_type', 'bank', 'account_age_days']
+  events_df:    shape=(25000, 17) cols=['event_id', 'sender_id', 'target_id', 'amount_inr', 'hour_of_day', 'is_weekend', 'historical_tx_count_24h', 'avg_amount_72h', 'velocity_delta_sec', 'is_canary_hit', 'canary_hop_distance', 'fan_in_ratio_60m', 'fan_out_ratio_60m', 'amount_conservation_ratio', 'shared_device_mule_count', 'cs_lp_risk_score', 'is_mule_label']
+  benchmark.py:66  nodes_df, events_df = generate(...)
+  dataset_generator.py:191  return nodes_df, events_df
+  => UNPACKING IS CORRECT. (An earlier probe read the order backwards;
+     corrected here. No bug.)
+  total_nodes reported  = len(nodes_df) = 100000
+  total_edges  reported = len(events_df) = 25000
+  => NOTE: 'total_edges' is 25,000 EVENTS ROWS, not graph edges. The
+     100k figure is entity rows, while 25k is a *sample* of events drawn
+     from those entities. Docs say '100,000-node network' — the actual
+     benchmark graph has only 25,000 event rows over 100k nodes.
+
+### A. SINGLE-FEATURE LABEL SEPARATION (solo ROC-AUC on full set) ###
+  label rate overall: 0.1462  (n=25000)
+  cs_lp_risk_score             solo AUC = 0.9518   ORACLE-GRADE LEAKAGE
+  amount_conservation_ratio    solo AUC = 0.9219   strong
+  fan_out_ratio_60m            solo AUC = 0.8816   strong
+  canary_hop_distance          solo AUC = 0.8430   strong
+  fan_in_ratio_60m             solo AUC = 0.8135   strong
+  shared_device_mule_count     solo AUC = 0.7589   ok
+  velocity_delta_sec           solo AUC = 0.6840   ok
+  amount_inr                   solo AUC = 0.6727   ok
+  avg_amount_72h               solo AUC = 0.6584   ok
+  historical_tx_count_24h      solo AUC = 0.6158   ok
+  is_canary_hit                solo AUC = 0.5966   ok
+  is_weekend                   solo AUC = 0.5274   ok
+  hour_of_day                  solo AUC = 0.5050   ok
+
+### B. GRAPH ABLATION ###
+  model                        precision  recall   F1     ROC    PR     FP    FN
+  1. Tabular (6 tx features)       P=0.783 R=0.290 F1=0.424 ROC=0.896 PR=0.630 FP=90 FN=794
+  2. Full Graph (12 features)      P=0.995 R=0.988 F1=0.992 ROC=1.000 PR=1.000 FP=5 FN=13
+  3. Graph - cs_lp (11 features)   P=0.993 R=0.975 F1=0.984 ROC=1.000 PR=0.998 FP=8 FN=28
+  4. Graph - cs_lp - hop_dist      P=0.983 R=0.961 F1=0.972 ROC=0.999 PR=0.997 FP=19 FN=44
+
+  Lift from adding cs_lp+motifs over tabular: +21.2 pp precision
+  Motif-only (NO cs_lp) precision: 0.993  => removes only 0.3 pp of the lift
+  Motif-only, also dropping hop_dist: P=0.983 PR=0.997
+  => CONCLUSION: performance is carried by the label-conditional MOTIF
+     bands (fan_in/out, conservation), not by any graph algorithm.
+     No NetworkX graph is constructed; the 'graph' features are
+     generator-side random draws, not computed graph statistics.
+
+### C. CHRONOLOGICAL SPLIT FEASIBILITY ###
+  columns containing time info: ['hour_of_day']
+  hour_of_day exists but it is a *time-of-day* value, not a date.
+  => There is NO event timestamp. Rows are emitted in Python loop order
+     for i in range(num_events), with the class chosen by random.random()
+     per row (dataset_generator.py:33). Row order therefore carries NO
+     chronological signal; label composition is randomly interleaved.
+  benchmark.py:68 labels this 'Strict Chronological Train (70%)/Holdout Test (30%)'
+  => The label is FALSE. It is a row-order split on a randomly-ordered frame.
+  Check: class rate train=0.1450 test=0.1492
+     (near-identical => random interleaving, i.e. an implicit RANDOM split)
+  => RECOMMENDATION: add a monotonic event_ts (simulated UTC) at
+     generation time and split on it, so the claim becomes true.
+
+### D. HONEYPOT ORACLE PERFORMANCE ###
+  TP=706 FP=0 FN=2950 TN=21344
+  Precision=1.0000  Recall=0.1931
+
+  LABEL DEFINITION WARNING: 'is_canary_hit' is generated as a property of
+  the SYNTHETIC generator, not an independent ground truth. The generator
+  sets is_canary_hit=1 only inside the mule branch (dataset_generator.py:44-46),
+  so a perfect 1.00 precision here is TAUTOLOGICAL: canary hits can only
+  occur where the generator already decided the row is a mule.
+
+  Consequence: the honeypot tripwire's real-world precision is UNMEASURED.
+  The synthetic corpus cannot test: unwitting victims who probe a canary,
+  fraud-harvested VPA reuse, or canary discovery by the syndicate.
+  Recall ceiling=0.193: 2950 of 3656 mules never touch a canary.

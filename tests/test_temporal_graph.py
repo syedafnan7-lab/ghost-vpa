@@ -3,6 +3,16 @@ from datetime import datetime, timezone, timedelta
 from backend.app.graph.temporal_engine import TemporalGraphEngine
 from backend.app.schemas.events import PaymentAttemptEvent
 
+_PaymentAttemptEvent = PaymentAttemptEvent
+
+def PaymentAttemptEvent(**kwargs):
+    """Test helper defaults ordinary topology edges to settled credits."""
+    kwargs.setdefault(
+        "event_type",
+        "PAYMENT_ATTEMPT" if kwargs.get("is_canary_hit", False) else "CREDIT_CONFIRMED",
+    )
+    return _PaymentAttemptEvent(**kwargs)
+
 def test_temporal_graph_edge_addition_and_motifs():
     engine = TemporalGraphEngine(window_hours=72)
     now = datetime(2026, 11, 14, 12, 0, 0, tzinfo=timezone.utc)
@@ -21,6 +31,7 @@ def test_temporal_graph_edge_addition_and_motifs():
             beneficiary_vpa="mule1@bank",
             beneficiary_bank="ICIX",
             amount_inr=10000.0,
+            event_type="CREDIT_CONFIRMED",
             device_token=f"DEV_{i}",
             ip_subnet="10.0.0.0/24"
         )
@@ -37,6 +48,7 @@ def test_temporal_graph_edge_addition_and_motifs():
         beneficiary_vpa="canary.trap.01@icixbank",
         beneficiary_bank="ICIX",
         amount_inr=39500.0,
+        event_type="PAYMENT_ATTEMPT",
         is_canary_hit=True,
         device_token="DEV_MULE",
         ip_subnet="10.0.0.0/24"
@@ -189,3 +201,99 @@ def test_dynamic_case_deadlines():
     sop_day, exp_left = compute_case_deadlines(created_70d, now)
     assert sop_day == 60
     assert exp_left == 0
+
+def test_cslp_directional_separation_and_feeder_scoring():
+    """Verifies that Directed Upstream Reverse Label Propagation (DU-RLP):
+    1. Propagates risk strictly backwards from canary to mules and upstream feeders.
+    2. Feeder account receives substantial risk score (feeder > 0.30).
+    3. Innocent downstream beneficiaries (merchants, unwitting victims) score 0.0000.
+    4. Achieves clean positive separation between suspects and innocent entities."""
+    engine = TemporalGraphEngine()
+    now = datetime(2026, 11, 14, 12, 0, 0, tzinfo=timezone.utc)
+
+    # Feeder -> Mules
+    engine.add_transaction_edge(PaymentAttemptEvent(
+        event_id="TX_FEED_1", timestamp=now - timedelta(minutes=40),
+        sender_account_id="FEEDER_SYNTH_007", sender_vpa="feeder@hdfxbank", sender_bank="HDFX",
+        beneficiary_account_id="MULE_SYNTH_101", beneficiary_vpa="mule1@icixbank", beneficiary_bank="ICIX",
+        amount_inr=50000.0, device_token="DEV_FEEDER", ip_subnet="10.0.0.0/24"
+    ))
+    engine.add_transaction_edge(PaymentAttemptEvent(
+        event_id="TX_FEED_2", timestamp=now - timedelta(minutes=35),
+        sender_account_id="FEEDER_SYNTH_007", sender_vpa="feeder@hdfxbank", sender_bank="HDFX",
+        beneficiary_account_id="MULE_SYNTH_102", beneficiary_vpa="mule2@icixbank", beneficiary_bank="ICIX",
+        amount_inr=45000.0, device_token="DEV_FEEDER", ip_subnet="10.0.0.0/24"
+    ))
+
+    # Mules -> Canary
+    engine.add_transaction_edge(PaymentAttemptEvent(
+        event_id="TX_CANARY_1", timestamp=now - timedelta(minutes=10),
+        sender_account_id="MULE_SYNTH_101", sender_vpa="mule1@icixbank", sender_bank="ICIX",
+        beneficiary_account_id=None, beneficiary_vpa="canary.trap.01@icixbank", beneficiary_bank="ICIX",
+        amount_inr=40000.0, is_canary_hit=True, device_token="DEV_MULE_1", ip_subnet="10.0.0.0/24"
+    ))
+    engine.add_transaction_edge(PaymentAttemptEvent(
+        event_id="TX_CANARY_2", timestamp=now - timedelta(minutes=8),
+        sender_account_id="MULE_SYNTH_102", sender_vpa="mule2@icixbank", sender_bank="ICIX",
+        beneficiary_account_id=None, beneficiary_vpa="canary.trap.01@icixbank", beneficiary_bank="ICIX",
+        amount_inr=38000.0, is_canary_hit=True, device_token="DEV_MULE_2", ip_subnet="10.0.0.0/24"
+    ))
+
+    # Mule -> Innocent Merchant
+    engine.add_transaction_edge(PaymentAttemptEvent(
+        event_id="TX_INNOCENT_1", timestamp=now - timedelta(minutes=5),
+        sender_account_id="MULE_SYNTH_101", sender_vpa="mule1@icixbank", sender_bank="ICIX",
+        beneficiary_account_id="MERCHANT_SUPERMARKET", beneficiary_vpa="merchant@icixbank", beneficiary_bank="ICIX",
+        amount_inr=2500.0, device_token="DEV_MULE_1", ip_subnet="10.0.0.0/24"
+    ))
+
+    scores = engine.compute_cslp_scores(now)
+
+    # True positives: Mules and Feeder
+    assert scores["FEEDER_SYNTH_007"] > 0.30
+    assert scores["MULE_SYNTH_101"] > 0.35
+    assert scores["MULE_SYNTH_102"] > 0.35
+
+    # False positive risk: Innocent merchant must earn 0.0000
+    assert scores.get("MERCHANT_SUPERMARKET", 0.0) == 0.0000
+
+    # Separation metric: min(TP) - max(FP)
+    tp_scores = [scores["FEEDER_SYNTH_007"], scores["MULE_SYNTH_101"], scores["MULE_SYNTH_102"]]
+    fp_scores = [scores.get("MERCHANT_SUPERMARKET", 0.0)]
+    separation = min(tp_scores) - max(fp_scores)
+    assert separation >= 0.30
+
+def test_case_network_attribution():
+    """Verifies that attribute_case_network correctly extracts feeder,
+    connected mules count, and deterministic cluster ID."""
+    engine = TemporalGraphEngine()
+    now = datetime(2026, 11, 14, 12, 0, 0, tzinfo=timezone.utc)
+
+    # Feeder -> Mule 1 & Mule 2
+    engine.add_transaction_edge(PaymentAttemptEvent(
+        event_id="TX_1", timestamp=now - timedelta(minutes=20),
+        sender_account_id="FEEDER_ROOT", sender_vpa="feeder@bank", sender_bank="HDFX",
+        beneficiary_account_id="MULE_ALPHA", beneficiary_vpa="mule_a@bank", beneficiary_bank="ICIX",
+        amount_inr=50000.0, device_token="DEV_F", ip_subnet="10.0.0.0/24"
+    ))
+    engine.add_transaction_edge(PaymentAttemptEvent(
+        event_id="TX_2", timestamp=now - timedelta(minutes=18),
+        sender_account_id="FEEDER_ROOT", sender_vpa="feeder@bank", sender_bank="HDFX",
+        beneficiary_account_id="MULE_BETA", beneficiary_vpa="mule_b@bank", beneficiary_bank="ICIX",
+        amount_inr=45000.0, device_token="DEV_F", ip_subnet="10.0.0.0/24"
+    ))
+    # Mule 1 hits canary
+    engine.add_transaction_edge(PaymentAttemptEvent(
+        event_id="TX_3", timestamp=now - timedelta(minutes=5),
+        sender_account_id="MULE_ALPHA", sender_vpa="mule_a@bank", sender_bank="ICIX",
+        beneficiary_account_id=None, beneficiary_vpa="canary.trap@bank", beneficiary_bank="ICIX",
+        amount_inr=42000.0, is_canary_hit=True, device_token="DEV_MULE_SHARED", ip_subnet="10.0.0.0/24"
+    ))
+
+    attr = engine.attribute_case_network("MULE_ALPHA", now)
+    assert attr["feeder_id"] == "FEEDER_ROOT"
+    assert "FEEDER_ROOT" in attr["all_feeders"]
+    assert "MULE_BETA" in attr["evidence"]["connected_mules"]
+    assert attr["connected_mule_count"] >= 1
+    assert attr["cluster_id"] is not None
+    assert attr["cluster_id"].startswith("CLUST-SYN-")

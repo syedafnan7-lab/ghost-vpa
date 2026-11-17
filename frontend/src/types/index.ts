@@ -97,6 +97,8 @@ export interface GraphEdgeItem {
   timestamp: string;
   rail: string;
   is_tripwire: boolean;
+  is_financial: boolean;
+  event_type: string;
 }
 
 export interface EgoGraphData {
