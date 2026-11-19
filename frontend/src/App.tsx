@@ -8,7 +8,7 @@ import { InvestigationWorkbench } from './components/InvestigationWorkbench';
 import { HoneypotRegistry } from './components/HoneypotRegistry';
 import { ModelBenchmarking } from './components/ModelBenchmarking';
 import { SecurityAuditLogs } from './components/SecurityAuditLogs';
-import { ActiveTab, UserRole, CanaryItem, CaseDossier, PaymentAttempt, TripwireAlert } from './types';
+import { ActiveTab, UserRole, CanaryItem, CaseDossier, PaymentAttempt, TripwireAlert, GraphOverview } from './types';
 import { api } from './services/api';
 
 export const App: React.FC = () => {
@@ -23,6 +23,8 @@ export const App: React.FC = () => {
   const [events, setEvents] = useState<PaymentAttempt[]>([]);
   const [alerts, setAlerts] = useState<TripwireAlert[]>([]);
   const [focalGraphEntity, setFocalGraphEntity] = useState<string>('ACCT_SYNTH_HDFX_9912');
+  const [graphOverview, setGraphOverview] = useState<GraphOverview | null>(null);
+  const [preferredCaseId, setPreferredCaseId] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -36,12 +38,36 @@ export const App: React.FC = () => {
     }
   };
 
+  const refreshAlerts = async () => {
+    try {
+      setAlerts(await api.getAlerts());
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const refreshGraphOverview = async () => {
+    try {
+      setGraphOverview(await api.getGraphOverview());
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const refreshCases = async () => {
     try {
       const data = await api.getCases();
       setCases(data);
+      // Start the graph on a persisted entity. The old sample ID is absent
+      // from fresh databases, so it produced a blank graph despite existing cases.
+      if (data.length > 0 && focalGraphEntity === 'ACCT_SYNTH_HDFX_9912') {
+        const graphCase = data.find((item) => item.upstream_feeder_account || item.connected_mule_count > 0) || data[0];
+        setFocalGraphEntity(graphCase.target_account_id);
+      }
+      return data;
     } catch (e) {
       console.error(e);
+      return [];
     }
   };
 
@@ -58,7 +84,9 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     refreshCanaries();
+    refreshAlerts();
     refreshCases();
+    refreshGraphOverview();
     refreshSimStatus();
 
     // WebSocket connection for real-time live events
@@ -70,11 +98,11 @@ export const App: React.FC = () => {
     socket.onmessage = (msg) => {
       try {
         const payload = JSON.parse(msg.data);
-        if (payload.type === 'PAYMENT_ATTEMPT') {
-          setEvents((prev) => [payload.data, ...prev.slice(0, 99)]);
+        if (['IDENTIFIER_DISCOVERY', 'BENEFICIARY_VALIDATION', 'PAYMENT_ATTEMPT', 'CREDIT_CONFIRMED', 'PAYMENT_DECLINED', 'PAYMENT_REVERSED'].includes(payload.type)) {
+          setEvents((prev) => [{ ...payload.data, event_type: payload.type }, ...prev.slice(0, 99)]);
           setSimTime(payload.data.timestamp);
         } else if (payload.type === 'TRIPWIRE_ALERT') {
-          setAlerts((prev) => [payload.data, ...prev.slice(0, 29)]);
+          setAlerts((prev) => [payload.data, ...prev.filter((item) => item.alert_id !== payload.data.alert_id).slice(0, 29)]);
           refreshCanaries();
           refreshCases();
         } else if (payload.type === 'CLOCK_TICK') {
@@ -137,16 +165,27 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleRunScenario = async (scenario: 'A' | 'B' | 'C' | 'D') => {
+  const handleRunScenario = async (scenario: 'A' | 'B' | 'C' | 'D' | 'E') => {
     try {
-      await api.controlSim('run_scenario', speed, scenario);
-      refreshCanaries();
-      refreshCases();
+      const result = await api.controlSim('run_scenario', speed, scenario);
+      await Promise.all([refreshCanaries(), refreshAlerts(), refreshGraphOverview()]);
       if (scenario === 'A') {
         setActiveTab('monitor');
       } else if (scenario === 'B' || scenario === 'D') {
         setFocalGraphEntity(scenario === 'B' ? 'FEEDER_SYNTH_007' : 'FEEDER_SYNTH_009');
         setActiveTab('network');
+      } else if (scenario === 'E') {
+        const refreshed = await refreshCases();
+        const primaryCaseId: string | undefined = result?.result?.primary_case_id;
+        const scenarioCaseIds: string[] = result?.result?.case_ids ?? [];
+        const nextCase = refreshed.find((item) => item.case_id === primaryCaseId)
+          || refreshed.find((item) => scenarioCaseIds.includes(item.case_id))
+          || refreshed.find((item) => item.target_account_id === 'MULE_SYNTH_101');
+        setPreferredCaseId(nextCase?.case_id ?? null);
+        setFocalGraphEntity('MULE_SYNTH_101');
+        setActiveTab('workbench');
+      } else {
+        await refreshCases();
       }
     } catch (e) {
       console.error(e);
@@ -182,6 +221,7 @@ export const App: React.FC = () => {
                 canaries={canaries}
                 cases={cases}
                 alerts={alerts}
+                graphOverview={graphOverview}
                 setActiveTab={setActiveTab}
                 onRunScenario={handleRunScenario}
               />
@@ -209,8 +249,11 @@ export const App: React.FC = () => {
             {activeTab === 'workbench' && (
               <InvestigationWorkbench
                 cases={cases}
-                role={role}
-                onRefreshCases={refreshCases}
+                preferredCaseId={preferredCaseId}
+                onOpenGraph={(entityId) => {
+                  setFocalGraphEntity(entityId);
+                  setActiveTab('network');
+                }}
               />
             )}
 

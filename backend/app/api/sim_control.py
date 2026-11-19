@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/v1/sim", tags=["Simulation Control"])
 class SimControlRequest(BaseModel):
     action: Literal["play", "pause", "resume", "reset", "set_speed", "run_scenario"]
     speed: Optional[int] = None
-    scenario: Optional[Literal["A", "B", "C", "D"]] = None
+    scenario: Optional[Literal["A", "B", "C", "D", "E"]] = None
 
 class SimStatusResponse(BaseModel):
     is_paused: bool
@@ -48,6 +48,9 @@ async def control_simulation(payload: SimControlRequest):
         elif payload.scenario == "D":
             res = await simulator.run_scenario_d_multihop_network()
             return {"status": "SUCCESS", "scenario": "D", "result": res}
+        elif payload.scenario == "E":
+            res = await simulator.run_scenario_e_end_to_end_investigation()
+            return {"status": "SUCCESS", "scenario": "E", "result": res}
         else:
             raise HTTPException(status_code=400, detail="Invalid scenario specified")
 

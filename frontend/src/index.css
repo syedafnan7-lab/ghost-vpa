@@ -71,14 +71,14 @@
     color: var(--ink-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-feature-settings: 'kern', 'liga', 'calt';
   }
 
   /* Numerals: tabular everywhere a number sits in a column or changes on
      screen, so digits don't jitter. Proportional only for hero figures. */
   code, kbd, samp, pre, .font-mono, table {
-    font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    font-family: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'zero', 'ss02';
   }
@@ -139,6 +139,16 @@
 
   /* Emerge: an alert row arriving from the websocket slides in from the top. */
   .animate-emerge { animation: emerge var(--motion-normal) var(--ease-out) both; }
+}
+
+@layer components {
+  .case-workbench {
+    --workbench-muted: #74839A;
+  }
+
+  .case-workbench .text-ink3 {
+    color: var(--workbench-muted);
+  }
 }
 
 /* ==========================================================================

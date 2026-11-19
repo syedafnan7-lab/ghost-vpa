@@ -293,7 +293,10 @@ def test_case_network_attribution():
     attr = engine.attribute_case_network("MULE_ALPHA", now)
     assert attr["feeder_id"] == "FEEDER_ROOT"
     assert "FEEDER_ROOT" in attr["all_feeders"]
-    assert "MULE_BETA" in attr["evidence"]["connected_mules"]
-    assert attr["connected_mule_count"] >= 1
+    # Shared device evidence is retained, but without an independent canary
+    # interaction it does not make the other account a connected mule candidate.
+    assert "MULE_BETA" not in attr["evidence"]["connected_mules"]
+    assert attr["evidence"]["shared_devices"]
+    assert attr["connected_mule_count"] == 0
     assert attr["cluster_id"] is not None
     assert attr["cluster_id"].startswith("CLUST-SYN-")

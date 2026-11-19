@@ -79,6 +79,35 @@ class HoneypotRegistry:
             if c.status == "ACTIVE":
                 self._active_canary_vpas.add(c.vpa.lower())
 
+    async def ensure_demo_canary(self, db: AsyncSession) -> CanaryModel:
+        """Create the stable, reserved synthetic endpoint used by Scenario E."""
+        stmt = select(CanaryModel).where(CanaryModel.canary_id == "CANARY_VPA_001")
+        result = await db.execute(stmt)
+        canary = result.scalars().first()
+        if canary is None:
+            stmt = select(CanaryModel).where(CanaryModel.vpa == "canary_vpa_001@synthetic.test")
+            result = await db.execute(stmt)
+            canary = result.scalars().first()
+        if canary is None:
+            canary = CanaryModel(
+                canary_id="CANARY_VPA_001",
+                vpa="canary_vpa_001@synthetic.test",
+                designated_bank="SYNTH",
+                canary_type="REGULATORY_TRIPWIRE",
+                status="ACTIVE",
+                purpose="Deterministic end-to-end synthetic investigation scenario",
+                hit_count=0,
+                synthetic_tag=True,
+                created_at=datetime(2026, 11, 14, 9, 0, tzinfo=timezone.utc),
+            )
+            db.add(canary)
+            await db.commit()
+        elif canary.status != "ACTIVE":
+            canary.status = "ACTIVE"
+            await db.commit()
+        await self.initialize(db)
+        return self.get_canary_by_vpa(canary.vpa) or canary
+
     def is_canary(self, vpa: str) -> bool:
         """Sub-microsecond O(1) in-memory check."""
         return vpa.lower() in self._active_canary_vpas
@@ -86,18 +115,18 @@ class HoneypotRegistry:
     def get_canary_by_vpa(self, vpa: str) -> Optional[CanaryModel]:
         return self._canary_cache.get(vpa.lower())
 
-    async def record_hit(self, vpa: str, db: AsyncSession):
+    async def record_hit(self, vpa: str, db: AsyncSession, commit: bool = True):
         """Increments hit count while keeping canary ACTIVE so ongoing probes are tracked."""
         c = self._canary_cache.get(vpa.lower())
         if c:
-            c.hit_count += 1
-            # Update DB
             stmt = select(CanaryModel).where(CanaryModel.canary_id == c.canary_id)
             res = await db.execute(stmt)
             db_canary = res.scalars().first()
             if db_canary:
                 db_canary.hit_count += 1
-                await db.commit()
+                if commit:
+                    await db.commit()
+                    c.hit_count = db_canary.hit_count
 
     async def register_canary(self, data: CanaryVPARegister, db: AsyncSession) -> CanaryVPAResponse:
         canary_id = f"CANARY-{uuid.uuid4().hex[:8].upper()}"

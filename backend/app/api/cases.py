@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.db.session import get_db
-from backend.app.db.models import CaseModel
+from backend.app.db.models import CaseModel, PaymentEventModel
 from backend.app.core.audit_logger import audit_logger
 from backend.app.core.simulation_clock import clock
-from backend.app.schemas.cases import CaseDossierResponse, CaseActionPayload
+from backend.app.schemas.cases import CaseDossierResponse, CaseActionPayload, CaseEvidenceEvent
 from backend.app.threat_intel.stix_exporter import stix_exporter
 
 router = APIRouter(prefix="/api/v1/cases", tags=["Investigation Workbench & Cases"])
@@ -140,6 +140,39 @@ async def take_case_action(
         fiu_str_narrative=case.fiu_str_narrative,
         ncrp_payload_preview=json.loads(case.ncrp_payload_json or "{}")
     )
+
+
+@router.get("/{case_id}/evidence", response_model=List[CaseEvidenceEvent])
+async def get_case_evidence(case_id: str, db: AsyncSession = Depends(get_db)):
+    case_result = await db.execute(select(CaseModel).where(CaseModel.case_id == case_id))
+    case = case_result.scalars().first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    payload = json.loads(case.ncrp_payload_json or "{}")
+    event_ids = set(payload.get("evidence_event_ids", []))
+    if not event_ids:
+        from backend.app.db.models import AlertModel
+        alert_result = await db.execute(select(AlertModel).where(AlertModel.alert_id == case.originating_alert_id))
+        alert = alert_result.scalars().first()
+        if alert:
+            event_ids.add(alert.event_id)
+    if not event_ids:
+        return []
+
+    events_result = await db.execute(
+        select(PaymentEventModel)
+        .where(PaymentEventModel.event_id.in_(event_ids))
+        .order_by(PaymentEventModel.timestamp.asc(), PaymentEventModel.event_id.asc())
+    )
+    return [CaseEvidenceEvent(
+        event_id=e.event_id, timestamp=e.timestamp, event_type=e.event_type or "PAYMENT_ATTEMPT",
+        original_event_id=e.original_event_id, sender_account_id=e.sender_account_id,
+        beneficiary_account_id=e.beneficiary_account_id, beneficiary_vpa=e.beneficiary_vpa,
+        amount_inr=e.amount_inr, is_canary_hit=bool(e.is_canary_hit),
+        simulated_result=e.simulated_result or "ATTEMPT_RECORDED",
+        zero_funds_transferred=bool(e.zero_funds_transferred),
+    ) for e in events_result.scalars().all()]
 
 @router.get("/{case_id}/stix-bundle")
 async def download_case_stix_bundle(case_id: str, db: AsyncSession = Depends(get_db)):

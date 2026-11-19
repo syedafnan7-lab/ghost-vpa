@@ -115,10 +115,11 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
       .data(edges)
       .enter()
       .append('line')
-      .attr('stroke', d => d.is_tripwire ? '#ef4444' : '#475569')
+      .attr('stroke', d => d.is_reversed ? '#64748b' : d.is_tripwire ? '#ef4444' : '#475569')
       .attr('stroke-width', d => d.is_tripwire ? 2.5 : Math.max(1, Math.min(4, d.amount_inr / 15000)))
-      .attr('stroke-dasharray', d => d.is_tripwire || !d.is_financial ? '4 2' : 'none')
+      .attr('stroke-dasharray', d => d.is_reversed ? '2 4' : d.is_tripwire || !d.is_financial ? '4 2' : 'none')
       .attr('marker-end', 'url(#arrowhead)');
+    link.append('title').text(d => `${d.event_type}: ${d.event_id}${d.original_event_id ? ` · original ${d.original_event_id}` : ''}${d.is_reversed ? ' · reversed' : ''}`);
 
     // Node groups
     const node = container.append('g')
@@ -356,9 +357,6 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
             <span className="text-ink">Benign Account</span>
           </div>
 
-          <p className="text-[10px] text-ink3 leading-relaxed pt-0.5 max-w-[15rem] font-sans">
-            A suspected mule is a <span className="text-canary font-semibold">triage flag</span>, not a confirmed finding — it carries square form and neutral ink for review.
-          </p>
         </div>
 
         {/* Zoom Buttons */}
@@ -375,7 +373,7 @@ export const NetworkExplorer: React.FC<NetworkExplorerProps> = ({
         </div>
 
         {/* D3 SVG Canvas */}
-        <svg ref={svgRef} className="w-full h-full bg-void" />
+        <svg ref={svgRef} className="flex-1 min-w-0 h-full bg-void" />
 
         {/* Evidence Drawer (Right Panel) */}
         {selectedNode && (

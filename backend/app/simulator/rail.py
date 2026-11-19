@@ -235,4 +235,84 @@ class PaymentRailSimulator:
 
         return {"status": "SUCCESS", "message": "Multi-hop 4-chain executed. Motifs and delta-t velocity recorded."}
 
+    async def run_scenario_e_end_to_end_investigation(self):
+        """Run a stable, replay-safe synthetic case, attribution and merchant scenario."""
+        from backend.app.core.honeypot_registry import honeypot_registry
+
+        base = datetime(2026, 11, 14, 9, 0, 0, tzinfo=timezone.utc)
+        canary_vpa = "canary_vpa_001@synthetic.test"
+        async with AsyncSessionLocal() as db:
+            await honeypot_registry.ensure_demo_canary(db)
+            events = [
+                PaymentAttemptEvent(
+                    event_id="DEMO-E2E-20261114-01-FEEDER-MULE-101", timestamp=base + timedelta(minutes=1),
+                    sender_account_id="FEEDER_SYNTH_007", sender_vpa="feeder007@synthetic.test",
+                    sender_bank="SYNTH", beneficiary_account_id="MULE_SYNTH_101",
+                    beneficiary_vpa="mule101@synthetic.test", beneficiary_bank="SYNTH",
+                    amount_inr=50000.0, event_type="CREDIT_CONFIRMED", device_token="DEV_DEMO_FEEDER",
+                    ip_subnet="192.0.2.0/24",
+                ),
+                PaymentAttemptEvent(
+                    event_id="DEMO-E2E-20261114-02-FEEDER-MULE-102", timestamp=base + timedelta(minutes=2),
+                    sender_account_id="FEEDER_SYNTH_007", sender_vpa="feeder007@synthetic.test",
+                    sender_bank="SYNTH", beneficiary_account_id="MULE_SYNTH_102",
+                    beneficiary_vpa="mule102@synthetic.test", beneficiary_bank="SYNTH",
+                    amount_inr=48000.0, event_type="CREDIT_CONFIRMED", device_token="DEV_DEMO_FEEDER",
+                    ip_subnet="192.0.2.0/24",
+                ),
+                PaymentAttemptEvent(
+                    event_id="DEMO-E2E-20261114-03-MERCHANT-PAYMENT", timestamp=base + timedelta(minutes=5),
+                    sender_account_id="MULE_SYNTH_101", sender_vpa="mule101@synthetic.test",
+                    sender_bank="SYNTH", beneficiary_account_id="MERCHANT_SYNTH_900",
+                    beneficiary_vpa="merchant900@synthetic.test", beneficiary_bank="SYNTH",
+                    amount_inr=18000.0, event_type="CREDIT_CONFIRMED", device_token="DEV_DEMO_MULE_101",
+                    ip_subnet="192.0.2.0/24",
+                ),
+                PaymentAttemptEvent(
+                    event_id="DEMO-E2E-20261114-04-MULE-101-CANARY", timestamp=base + timedelta(minutes=9),
+                    sender_account_id="MULE_SYNTH_101", sender_vpa="mule101@synthetic.test",
+                    sender_bank="SYNTH", beneficiary_vpa=canary_vpa, beneficiary_bank="SYNTH",
+                    amount_inr=12000.0, event_type="PAYMENT_ATTEMPT", device_token="DEV_DEMO_MULE_101",
+                    ip_subnet="192.0.2.0/24",
+                ),
+                PaymentAttemptEvent(
+                    event_id="DEMO-E2E-20261114-05-MULE-102-CANARY", timestamp=base + timedelta(minutes=8),
+                    sender_account_id="MULE_SYNTH_102", sender_vpa="mule102@synthetic.test",
+                    sender_bank="SYNTH", beneficiary_vpa=canary_vpa, beneficiary_bank="SYNTH",
+                    amount_inr=9000.0, event_type="PAYMENT_ATTEMPT", device_token="DEV_DEMO_MULE_102",
+                    ip_subnet="192.0.2.0/24",
+                ),
+                PaymentAttemptEvent(
+                    event_id="DEMO-E2E-20261114-06-CUSTOMER-CANARY", timestamp=base + timedelta(minutes=10),
+                    sender_account_id="CUSTOMER_SYNTH_901", sender_vpa="customer901@synthetic.test",
+                    sender_bank="SYNTH", beneficiary_vpa=canary_vpa, beneficiary_bank="SYNTH",
+                    amount_inr=250.0, event_type="PAYMENT_ATTEMPT", device_token="DEV_DEMO_CUSTOMER_901",
+                    ip_subnet="192.0.2.0/24",
+                ),
+            ]
+            # At equal timestamps, process Mule 102 first so Mule 101's case
+            # captures the second independent canary interaction as evidence.
+            events.sort(key=lambda item: (item.timestamp, item.event_id))
+            results = [await ingest_payment_attempt(event, db) for event in events]
+            clock.advance_to(max(item.timestamp for item in events))
+
+        case_ids = list(dict.fromkeys(result.case_id for result in results if result.case_id))
+        primary_case_id = next(
+            result.case_id for result in results
+            if result.event_id == "DEMO-E2E-20261114-04-MULE-101-CANARY"
+        )
+
+        return {
+            "status": "SUCCESS",
+            "scenario": "E",
+            "scenario_id": "DEMO-E2E-20261114",
+            "canary_id": "CANARY_VPA_001",
+            "canary_vpa": canary_vpa,
+            "event_ids": [result.event_id for result in results],
+            "case_ids": case_ids,
+            "primary_case_id": primary_case_id,
+            "results": [result.model_dump(mode="json") for result in results],
+            "focal_account_id": "MULE_SYNTH_101",
+        }
+
 simulator = PaymentRailSimulator()

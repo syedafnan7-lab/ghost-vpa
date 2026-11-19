@@ -6,6 +6,17 @@ import networkx as nx
 from backend.app.schemas.events import PaymentAttemptEvent
 from backend.app.schemas.graph import GraphNode, GraphEdge, EgoGraphResponse
 
+
+def _utc_datetime(value: datetime) -> datetime:
+    """Normalize persisted SQLite timestamps before comparing them to the UTC clock."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def event_type_is_canary_seed(event_type: str) -> bool:
+    return event_type == "PAYMENT_ATTEMPT"
+
 class TemporalGraphEngine:
     def __init__(self, window_hours: int = 72, decay_lambda: float = 0.05, restart_alpha: float = 0.85):
         self.window_hours = window_hours
@@ -24,24 +35,24 @@ class TemporalGraphEngine:
         - PAYMENT_REVERSED: Links to original_event_id and neutralizes previous financial transfer.
         - PAYMENT_ATTEMPT / CREDIT_CONFIRMED: Adds directed payment edge (amount > 0).
         """
-        u = event.sender_account_id
-        # If target is canary, node id is the canary VPA
-        v = event.beneficiary_vpa if event.is_canary_hit else (event.beneficiary_account_id or event.beneficiary_vpa)
-
         event_type = getattr(event, "event_type", "PAYMENT_ATTEMPT") or "PAYMENT_ATTEMPT"
+        is_canary_seed = event.is_canary_hit and event_type_is_canary_seed(event_type)
+        u = event.sender_account_id
+        # If target is a canary interaction, node id is the canary VPA.
+        v = event.beneficiary_vpa if is_canary_seed else (event.beneficiary_account_id or event.beneficiary_vpa)
 
         # Ensure sender node exists
         if u not in self.graph:
             self.graph.add_node(
                 u,
                 label=u,
-                node_type="SENDER_MULE" if event.is_canary_hit else "BENIGN_ACCOUNT",
+                node_type="SENDER_MULE" if is_canary_seed else "BENIGN_ACCOUNT",
                 bank=event.sender_bank,
                 is_canary=False,
                 device_token=event.device_token,
                 created_at=event.timestamp
             )
-        elif event.is_canary_hit:
+        elif is_canary_seed:
             self.graph.nodes[u]["node_type"] = "SENDER_MULE"
 
         # Ensure beneficiary node exists
@@ -49,12 +60,12 @@ class TemporalGraphEngine:
             self.graph.add_node(
                 v,
                 label=v,
-                node_type="CANARY" if event.is_canary_hit else "BENIGN_ACCOUNT",
+                node_type="CANARY" if is_canary_seed else "BENIGN_ACCOUNT",
                 bank=event.beneficiary_bank,
-                is_canary=event.is_canary_hit,
+                is_canary=is_canary_seed,
                 created_at=event.timestamp
             )
-            if event.is_canary_hit:
+            if is_canary_seed:
                 self.canary_nodes.add(v)
 
         # Add hardware device linkage edge if device token provided
@@ -62,31 +73,27 @@ class TemporalGraphEngine:
             dev_id = f"DEV_{event.device_token}"
             if dev_id not in self.graph:
                 self.graph.add_node(dev_id, label=dev_id, node_type="DEVICE_TOKEN", is_canary=False)
-            self.graph.add_edge(u, dev_id, key=f"DEV_{event.event_id}", amount_inr=0.0, timestamp=event.timestamp, is_tripwire=False)
-
-        # Handle non-financial event semantics
-        if event_type in ["IDENTIFIER_DISCOVERY", "BENEFICIARY_VALIDATION"]:
-            # Discovery / Lookup does not create a financial fund-flow edge
-            return
-
-        if event_type == "PAYMENT_DECLINED":
-            # Declined payment moved zero funds; do not create financial flow edge
-            return
+            self.graph.add_edge(
+                u, dev_id, key=f"DEV_{event.event_id}", event_id=event.event_id,
+                amount_inr=0.0, timestamp=event.timestamp, is_tripwire=False,
+                is_financial=False, is_device_link=True, event_type="DEVICE_ASSOCIATION",
+            )
 
         if event_type == "PAYMENT_REVERSED":
-            # Reversal: neutralize original transaction edge if present
+            # Preserve the original event and mark it reversed for auditability.
             orig_id = getattr(event, "original_event_id", None)
             if orig_id:
                 for edge_u, edge_v, edge_k, edge_data in list(self.graph.edges(keys=True, data=True)):
                     if edge_k == orig_id:
-                        self.graph.remove_edge(edge_u, edge_v, key=edge_k)
+                        edge_data["is_reversed"] = True
+                        edge_data["reversed_by_event_id"] = event.event_id
                         break
-            return
 
         # Preserve lifecycle evidence, while only confirmed credits count as
         # transferred funds. A canary attempt is an interaction seed, not a
         # completed payment.
         is_financial = event_type == "CREDIT_CONFIRMED"
+        is_tripwire = is_canary_seed and event_type == "PAYMENT_ATTEMPT"
         self.graph.add_edge(
             u,
             v,
@@ -96,9 +103,11 @@ class TemporalGraphEngine:
             is_financial=is_financial,
             timestamp=event.timestamp,
             payment_rail=event.payment_rail,
-            is_tripwire=event.is_canary_hit,
+            is_tripwire=is_tripwire,
             device_token=event.device_token,
-            event_type=event_type
+            event_type=event_type,
+            original_event_id=event.original_event_id,
+            is_reversed=False
         )
 
         # Enforce 72-hour sliding window expiration on ingestion
@@ -107,8 +116,7 @@ class TemporalGraphEngine:
 
     def prune_expired_edges(self, current_sim_time: datetime) -> int:
         """Removes edges older than the 72-hour sliding window and purges isolated benign nodes."""
-        if current_sim_time.tzinfo is None:
-            current_sim_time = current_sim_time.replace(tzinfo=timezone.utc)
+        current_sim_time = _utc_datetime(current_sim_time)
         cutoff = current_sim_time - timedelta(hours=self.window_hours)
 
         edges_to_remove = []
@@ -116,8 +124,7 @@ class TemporalGraphEngine:
         for u, v, k, data in self.graph.edges(keys=True, data=True):
             edge_time = data.get("timestamp")
             if edge_time:
-                if edge_time.tzinfo is None:
-                    edge_time = edge_time.replace(tzinfo=timezone.utc)
+                edge_time = _utc_datetime(edge_time)
                 if edge_time < cutoff:
                     edges_to_remove.append((u, v, k))
 
@@ -130,6 +137,35 @@ class TemporalGraphEngine:
             self.graph.remove_node(n)
 
         return len(edges_to_remove)
+
+    def remove_event(self, event_id: str) -> None:
+        """Remove an uncommitted event projection after a persistence failure."""
+        for source, target, key, data in list(self.graph.edges(keys=True, data=True)):
+            if key == event_id or key == f"DEV_{event_id}":
+                if data.get("is_reversed"):
+                    original_id = data.get("original_event_id")
+                    for _, _, original_key, original in self.graph.edges(keys=True, data=True):
+                        if original_key == original_id:
+                            original.pop("is_reversed", None)
+                            original.pop("reversed_by_event_id", None)
+                            break
+                self.graph.remove_edge(source, target, key=key)
+
+        for node in list(self.graph.nodes):
+            if self.graph.degree(node) == 0 and node not in self.canary_nodes:
+                self.graph.remove_node(node)
+
+        for canary in list(self.canary_nodes):
+            if not any(
+                data.get("is_tripwire")
+                for _, _, _, data in self.graph.in_edges(canary, keys=True, data=True)
+            ) and not any(
+                data.get("is_tripwire")
+                for _, _, _, data in self.graph.out_edges(canary, keys=True, data=True)
+            ):
+                self.canary_nodes.remove(canary)
+                if canary in self.graph:
+                    self.graph.remove_node(canary)
 
     def compute_cslp_scores(self, current_sim_time: datetime) -> Dict[str, float]:
         """Canary-Seeded Label Propagation (DU-RLP).
@@ -175,8 +211,7 @@ class TemporalGraphEngine:
                 weighted_sum = 0.0
                 for _, benef, _, data in out_edges:
                     t = data.get("timestamp", current_sim_time)
-                    if t.tzinfo is None:
-                        t = t.replace(tzinfo=timezone.utc)
+                    t = _utc_datetime(t)
                     # Ignore transactions that have not occurred yet relative to current_sim_time
                     if t > current_sim_time:
                         continue
@@ -191,7 +226,8 @@ class TemporalGraphEngine:
                     # Only completed transfers carry fund-flow risk. A direct
                     # canary attempt remains an independent interaction seed.
                     is_tripwire = data.get("is_tripwire", False)
-                    if not data.get("is_financial", False) and not is_tripwire:
+                    if ((not data.get("is_financial", False) and not is_tripwire)
+                            or data.get("is_reversed", False)):
                         continue
                     w = 4.0 if is_tripwire else math.exp(-self.decay_lambda * delta_h) * math.log(1.0 + max(0.0, amt) / 100.0)
                     weighted_sum += w * scores.get(benef, 0.0)
@@ -204,7 +240,15 @@ class TemporalGraphEngine:
                     # Structural Feeder amplification:
                     # Root nodes (in_degree == 0 among payment accounts) funding >= 2 suspects receive boost
                     non_dev_in_degree = sum(1 for p in self.graph.predecessors(node) if not p.startswith("DEV_"))
-                    suspect_benefs = {b for _, b, _, _ in out_edges if scores.get(b, 0.0) > 0.15}
+                    suspect_benefs = {
+                        b for _, b, _, edge_data in out_edges
+                        if scores.get(b, 0.0) > 0.15
+                        and not edge_data.get("is_reversed", False)
+                        and (edge_data.get("is_financial", False) or edge_data.get("is_tripwire", False))
+                        and _utc_datetime(edge_data.get("timestamp", current_sim_time)) <= current_sim_time
+                        and (current_sim_time - _utc_datetime(edge_data.get("timestamp", current_sim_time))).total_seconds()
+                        <= self.window_hours * 3600.0
+                    }
                     if non_dev_in_degree == 0 and len(suspect_benefs) >= 2:
                         boost = 1.0 + 0.25 * math.log2(len(suspect_benefs))
                         updated_val = min(1.0, updated_val * boost)
@@ -227,8 +271,7 @@ class TemporalGraphEngine:
         3. Computes a deterministic, topology-derived syndicate cluster ID.
         4. Distinguishes direct interaction from inferred network attribution.
         """
-        if current_sim_time.tzinfo is None:
-            current_sim_time = current_sim_time.replace(tzinfo=timezone.utc)
+        current_sim_time = _utc_datetime(current_sim_time)
 
         cutoff = current_sim_time - timedelta(hours=self.window_hours)
 
@@ -236,12 +279,12 @@ class TemporalGraphEngine:
             timestamp = data.get("timestamp")
             if timestamp is None:
                 return False
-            if timestamp.tzinfo is None:
-                timestamp = timestamp.replace(tzinfo=timezone.utc)
+            timestamp = _utc_datetime(timestamp)
             return cutoff <= timestamp <= current_sim_time
 
         def is_active_payment_edge(data: Dict[str, Any]) -> bool:
             return (data.get("is_financial", False)
+                    and not data.get("is_reversed", False)
                     and data.get("amount_inr", 0.0) > 0
                     and is_active_event_edge(data))
 
@@ -270,22 +313,30 @@ class TemporalGraphEngine:
                     upstream_funding_nodes.add(pred)
                     break
 
-        # Search 2-hop upstream if focal account was funded through a layering node
-        extended_feeders: Set[str] = set(upstream_funding_nodes)
-        for u_node in list(upstream_funding_nodes):
-            for grand_pred in self.graph.predecessors(u_node):
-                if not grand_pred.startswith("DEV_") and grand_pred not in self.canary_nodes:
-                    edges_dict = self.graph.get_edge_data(grand_pred, u_node) or {}
-                    for k, data in edges_dict.items():
-                        if is_active_payment_edge(data):
-                            extended_feeders.add(grand_pred)
-                            break
+        # Walk every confirmed-payment predecessor. The visited set handles
+        # cycles and preserves each distinct upstream path.
+        extended_feeders: Set[str] = set()
+        frontier = list(upstream_funding_nodes)
+        while frontier:
+            upstream = frontier.pop()
+            if upstream in extended_feeders:
+                continue
+            extended_feeders.add(upstream)
+            for predecessor in self.graph.predecessors(upstream):
+                if predecessor.startswith("DEV_") or predecessor in self.canary_nodes:
+                    continue
+                if any(is_active_payment_edge(d) for d in (self.graph.get_edge_data(predecessor, upstream) or {}).values()):
+                    frontier.append(predecessor)
 
         # Rank candidate feeders: prefer root nodes (in_degree == 0), then disbursed volume, then out-degree
         candidate_feeders = []
         for f in extended_feeders:
-            in_deg = sum(1 for p in self.graph.predecessors(f) if not p.startswith("DEV_"))
-            out_deg = sum(1 for s in self.graph.successors(f) if not s.startswith("DEV_"))
+            in_deg = sum(1 for p in self.graph.predecessors(f) if any(
+                is_active_payment_edge(d) for d in (self.graph.get_edge_data(p, f) or {}).values()
+            ))
+            out_deg = sum(1 for s in self.graph.successors(f) if any(
+                is_active_payment_edge(d) for d in (self.graph.get_edge_data(f, s) or {}).values()
+            ))
             score = scores.get(f, 0.0)
             total_disbursed = 0.0
             for _, s, _, d in self.graph.out_edges(f, keys=True, data=True):
@@ -300,19 +351,28 @@ class TemporalGraphEngine:
             })
 
         candidate_feeders.sort(
-            key=lambda x: (1 if x["in_degree"] == 0 else 0, x["total_disbursed"], x["out_degree"]),
+            key=lambda x: (1 if x["in_degree"] == 0 else 0, x["total_disbursed"], x["out_degree"], x["feeder_id"]),
             reverse=True
         )
 
         primary_feeder = candidate_feeders[0]["feeder_id"] if candidate_feeders else None
         all_feeders = [cf["feeder_id"] for cf in candidate_feeders]
 
-        # 2. Identify connected sibling mules
+        # 2. Identify connected sibling candidates with their own canary
+        # interaction. A shared feeder/device alone does not create a cluster.
         sibling_mules: Set[str] = set()
+
+        def has_canary_interaction(account_id: str) -> bool:
+            return any(
+                edge_data.get("is_tripwire") and is_active_event_edge(edge_data)
+                for _, target, _, edge_data in self.graph.out_edges(account_id, keys=True, data=True)
+                if target in self.canary_nodes
+            )
         for f in all_feeders:
             for _, succ, _, edge_data in self.graph.out_edges(f, keys=True, data=True):
                 if (succ != focal_account_id and not succ.startswith("DEV_")
-                        and succ not in self.canary_nodes and is_active_payment_edge(edge_data)):
+                        and succ not in self.canary_nodes and is_active_payment_edge(edge_data)
+                        and has_canary_interaction(succ)):
                     sibling_mules.add(succ)
 
         # Also identify mules linked via shared device tokens
@@ -323,7 +383,8 @@ class TemporalGraphEngine:
                 for other, _, _, other_edge in self.graph.in_edges(succ, keys=True, data=True):
                     if (other != focal_account_id and not other.startswith("DEV_")
                             and other not in self.canary_nodes and is_active_event_edge(other_edge)):
-                        sibling_mules.add(other)
+                        if has_canary_interaction(other):
+                            sibling_mules.add(other)
 
         connected_mule_count = len(sibling_mules)
 
@@ -336,13 +397,20 @@ class TemporalGraphEngine:
             if primary_feeder:
                 syndicate_members.update(all_feeders)
             syndicate_members.update(sibling_mules)
-            syndicate_members.update(shared_devices)
+            # Shared devices remain supporting evidence, not cluster membership.
 
             sorted_members = sorted(list(syndicate_members))
             comp_hash = hashlib.sha256(":".join(sorted_members).encode("utf-8")).hexdigest()[:8].upper()
             cluster_id = f"CLUST-SYN-{comp_hash}"
         else:
             syndicate_members = {focal_account_id}
+
+        evidence_event_ids: Set[str] = set()
+        evidence_accounts = {focal_account_id, *all_feeders, *sibling_mules}
+        for source, target, key, edge_data in self.graph.edges(keys=True, data=True):
+            if (source in evidence_accounts or target in evidence_accounts) and is_active_event_edge(edge_data):
+                if not source.startswith("DEV_") and not target.startswith("DEV_"):
+                    evidence_event_ids.add(str(key))
 
         return {
             "feeder_id": primary_feeder,
@@ -356,6 +424,7 @@ class TemporalGraphEngine:
                 "all_feeders": all_feeders,
                 "connected_mules": sorted(list(sibling_mules)),
                 "shared_devices": sorted(list(shared_devices)),
+                "event_ids": sorted(evidence_event_ids),
                 "direct_canary_hit": focal_account_id in self.graph and any(
                     succ in self.canary_nodes and any(is_active_event_edge(edge_data) and edge_data.get("is_tripwire")
                         for edge_data in (self.graph.get_edge_data(focal_account_id, succ) or {}).values())
@@ -374,7 +443,9 @@ class TemporalGraphEngine:
         out_edges = list(self.graph.out_edges(focal_entity_id, data=True))
 
         # 1. Rapid Fan-In (Aggregation into Mule): >= 3 remitters within 60 mins
-        recent_in = [e for e in in_edges if (current_sim_time - e[2].get("timestamp", current_sim_time)).total_seconds() <= 3600]
+        current_sim_time = _utc_datetime(current_sim_time)
+        recent_in = [e for e in in_edges if e[2].get("is_financial") and not e[2].get("is_reversed")
+                     and 0 <= (current_sim_time - _utc_datetime(e[2].get("timestamp", current_sim_time))).total_seconds() <= 3600]
         unique_remitters = {e[0] for e in recent_in}
         if len(unique_remitters) >= 3:
             total_in = sum(e[2].get("amount_inr", 0) for e in recent_in)
@@ -386,7 +457,8 @@ class TemporalGraphEngine:
             })
 
         # 2. Rapid Fan-Out (Layering Dispersion): >= 3 recipients within 30 mins
-        recent_out = [e for e in out_edges if (current_sim_time - e[2].get("timestamp", current_sim_time)).total_seconds() <= 1800]
+        recent_out = [e for e in out_edges if e[2].get("is_financial") and not e[2].get("is_reversed")
+                      and 0 <= (current_sim_time - _utc_datetime(e[2].get("timestamp", current_sim_time))).total_seconds() <= 1800]
         unique_beneficiaries = {e[1] for e in recent_out}
         if len(unique_beneficiaries) >= 3:
             total_out = sum(e[2].get("amount_inr", 0) for e in recent_out)
@@ -399,8 +471,8 @@ class TemporalGraphEngine:
 
         # 3. High Velocity Pass-Through & Amount Conservation
         if recent_in and recent_out:
-            latest_in = max(e[2].get("timestamp", current_sim_time) for e in recent_in)
-            earliest_out = min(e[2].get("timestamp", current_sim_time) for e in recent_out)
+            latest_in = max(_utc_datetime(e[2].get("timestamp", current_sim_time)) for e in recent_in)
+            earliest_out = min(_utc_datetime(e[2].get("timestamp", current_sim_time)) for e in recent_out)
             delta_t_min = (earliest_out - latest_in).total_seconds() / 60.0
             sum_in = sum(e[2].get("amount_inr", 0) for e in recent_in)
             sum_out = sum(e[2].get("amount_inr", 0) for e in recent_out)
@@ -438,17 +510,15 @@ class TemporalGraphEngine:
                 detected_motifs=[]
             )
 
-        if current_sim_time.tzinfo is None:
-            current_sim_time = current_sim_time.replace(tzinfo=timezone.utc)
+        current_sim_time = _utc_datetime(current_sim_time)
         cutoff = current_sim_time - timedelta(hours=window_hours)
 
         def is_edge_active(edge_data: Dict[str, Any]) -> bool:
             t = edge_data.get("timestamp")
             if not t:
                 return True
-            if t.tzinfo is None:
-                t = t.replace(tzinfo=timezone.utc)
-            return t >= cutoff
+            t = _utc_datetime(t)
+            return cutoff <= t <= current_sim_time
 
         # BFS bounded ego expansion traversing only active edges within window_hours
         visited_nodes: Set[str] = {focal_id}
@@ -486,6 +556,8 @@ class TemporalGraphEngine:
                 nodes_with_edges.add(u)
                 nodes_with_edges.add(v)
                 sub_edges.append(GraphEdge(
+                    event_id=str(data.get("event_id", k.removeprefix("DEV_") if data.get("is_device_link") else k)),
+                    original_event_id=data.get("original_event_id"),
                     source=u,
                     target=v,
                     amount_inr=data.get("amount_inr", 0.0),
@@ -493,7 +565,8 @@ class TemporalGraphEngine:
                     rail=data.get("payment_rail", "UPI"),
                     is_tripwire=data.get("is_tripwire", False),
                     is_financial=data.get("is_financial", False),
-                    event_type=data.get("event_type", "PAYMENT_ATTEMPT")
+                    event_type=data.get("event_type", "PAYMENT_ATTEMPT"),
+                    is_reversed=data.get("is_reversed", False)
                 ))
 
         # Only retain nodes that are either focal or incident to an active edge

@@ -4,7 +4,8 @@ import {
   EgoGraphData, 
   BenchmarkMetrics, 
   AuditLog, 
-  UserRole 
+  UserRole,
+  TripwireAlert
 } from '../types';
 
 const API_BASE = '/api/v1';
@@ -21,13 +22,21 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, speed, scenario })
     });
-    return res.json();
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.detail || `Simulation request failed (${res.status})`);
+    return payload;
   },
 
   // Canary Registry
   getCanaries: async (): Promise<CanaryItem[]> => {
     const res = await fetch(`${API_BASE}/canaries`);
     return res.json();
+  },
+  getAlerts: async (): Promise<TripwireAlert[]> => {
+    const res = await fetch(`${API_BASE}/alerts`);
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.detail || `Alert request failed (${res.status})`);
+    return payload;
   },
   registerCanary: async (data: { vpa: string; designated_bank: string; canary_type: string; purpose: string }) => {
     const res = await fetch(`${API_BASE}/canaries`, {
@@ -41,13 +50,27 @@ export const api = {
   // Temporal Graph
   getEgoGraph: async (entityId: string, depth = 2, maxNodes = 50, windowHours = 72): Promise<EgoGraphData> => {
     const res = await fetch(`${API_BASE}/graph/ego/${encodeURIComponent(entityId)}?depth=${depth}&max_nodes=${maxNodes}&window_hours=${windowHours}`);
-    return res.json();
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.detail || `Graph request failed (${res.status})`);
+    return payload;
+  },
+  getGraphOverview: async () => {
+    const res = await fetch(`${API_BASE}/graph/overview`);
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.detail || `Graph overview failed (${res.status})`);
+    return payload;
   },
 
   // Cases & Investigation
   getCases: async (): Promise<CaseDossier[]> => {
     const res = await fetch(`${API_BASE}/cases`);
     return res.json();
+  },
+  getCaseEvidence: async (caseId: string) => {
+    const res = await fetch(`${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence`);
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.detail || `Case evidence request failed (${res.status})`);
+    return payload;
   },
   takeCaseAction: async (caseId: string, action: string, notes: string, role: UserRole) => {
     const res = await fetch(`${API_BASE}/cases/${caseId}/action`, {

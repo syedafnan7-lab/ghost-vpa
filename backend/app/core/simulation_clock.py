@@ -55,6 +55,18 @@ class SimulationClock:
             self._last_tick_wall_clock = datetime.now(timezone.utc)
             self._is_paused = False
 
+    def advance_to(self, target_time: datetime) -> datetime:
+        """Move the simulation timeline forward without ever moving it backward."""
+        if target_time.tzinfo is None:
+            target_time = target_time.replace(tzinfo=timezone.utc)
+        target_time = target_time.astimezone(timezone.utc)
+        with self._lock:
+            current = self.now()
+            if target_time > current:
+                self._current_sim_time = target_time
+                self._last_tick_wall_clock = datetime.now(timezone.utc)
+            return self._current_sim_time
+
     def is_paused(self) -> bool:
         with self._lock:
             return self._is_paused

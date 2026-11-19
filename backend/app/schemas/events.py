@@ -41,3 +41,5 @@ class IngestionResponse(BaseModel):
     sender_status: str
     latency_ms: float
     message: str
+    alert_id: Optional[str] = None
+    case_id: Optional[str] = None

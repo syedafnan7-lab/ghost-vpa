@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     SIMULATOR_SEED: int = 42
     DEFAULT_SPEED_MULTIPLIER: int = 1
     TICK_INTERVAL_SECONDS: float = 1.0
+    SIMULATOR_AUTOSTART: bool = True
 
     # Temporal Graph Engine Parameters
     GRAPH_WINDOW_HOURS: int = 72

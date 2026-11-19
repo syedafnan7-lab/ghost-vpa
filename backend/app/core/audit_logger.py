@@ -18,12 +18,21 @@ class AuditLogger:
         actor_role: str,
         action: str,
         entity_id: str,
-        details: Dict[str, Any]
+        details: Dict[str, Any],
+        commit: bool = True
     ) -> AuditLogEntry:
         # Fetch latest audit log for previous hash
         stmt = select(AuditLogModel).order_by(AuditLogModel.timestamp.desc()).limit(1)
         result = await db.execute(stmt)
         last_log = result.scalars().first()
+        pending_logs = [
+            obj for obj in (*db.new, *db.dirty)
+            if isinstance(obj, AuditLogModel)
+        ]
+        if pending_logs:
+            pending_last = max(pending_logs, key=lambda entry: entry.timestamp)
+            if last_log is None or pending_last.timestamp > last_log.timestamp:
+                last_log = pending_last
 
         prev_hash = last_log.current_hash if last_log else GENESIS_HASH
         log_id = f"AUD-{uuid.uuid4().hex[:12].upper()}"
@@ -48,8 +57,11 @@ class AuditLogger:
             current_hash=current_hash
         )
         db.add(db_entry)
-        await db.commit()
-        await db.refresh(db_entry)
+        if commit:
+            await db.commit()
+            await db.refresh(db_entry)
+        else:
+            await db.flush()
 
         return AuditLogEntry(
             log_id=log_id,

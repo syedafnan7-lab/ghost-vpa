@@ -17,6 +17,8 @@ class GraphNode(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 class GraphEdge(BaseModel):
+    event_id: str
+    original_event_id: Optional[str] = None
     source: str
     target: str
     amount_inr: float
@@ -26,6 +28,7 @@ class GraphEdge(BaseModel):
     is_tripwire: bool = False
     is_financial: bool = False
     event_type: str = "PAYMENT_ATTEMPT"
+    is_reversed: bool = False
 
 class EgoGraphResponse(BaseModel):
     focal_entity_id: str

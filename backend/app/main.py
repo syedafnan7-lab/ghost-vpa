@@ -13,6 +13,7 @@ from backend.app.api.cases import router as cases_router
 from backend.app.api.benchmark import router as benchmark_router
 from backend.app.api.audit import router as audit_router
 from backend.app.api.websocket import router as ws_router
+from backend.app.api.alerts import router as alerts_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,7 +26,7 @@ async def lifespan(app: FastAPI):
 
         from backend.app.db.models import PaymentEventModel
         from sqlalchemy.future import select
-        from datetime import timedelta
+        from datetime import timedelta, timezone
         from backend.app.core.simulation_clock import clock
         from backend.app.schemas.events import PaymentAttemptEvent
         from backend.app.graph.temporal_engine import temporal_graph
@@ -39,6 +40,12 @@ async def lifespan(app: FastAPI):
         )
         result = await db.execute(stmt)
         events = result.scalars().all()
+        if events:
+            latest_event_time = max(ev.timestamp for ev in events)
+            if latest_event_time.tzinfo is None:
+                latest_event_time = latest_event_time.replace(tzinfo=timezone.utc)
+            clock.advance_to(latest_event_time)
+            sim_now = clock.now()
         for ev in events:
             attempt = PaymentAttemptEvent(
                 event_id=ev.event_id,
@@ -64,7 +71,8 @@ async def lifespan(app: FastAPI):
         temporal_graph.prune_expired_edges(sim_now)
 
     # 3. Start Payment Rail Simulator
-    simulator.start()
+    if settings.SIMULATOR_AUTOSTART:
+        simulator.start()
 
     yield
 
@@ -95,6 +103,7 @@ app.include_router(cases_router)
 app.include_router(benchmark_router)
 app.include_router(audit_router)
 app.include_router(ws_router)
+app.include_router(alerts_router)
 
 @app.get("/healthz", tags=["System"])
 async def healthz():

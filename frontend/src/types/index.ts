@@ -34,6 +34,9 @@ export interface PaymentAttempt {
   is_canary_hit: boolean;
   simulated_result: string;
   sender_status: string;
+  event_type?: string;
+  original_event_id?: string | null;
+  zero_funds_transferred?: boolean;
 }
 
 export interface TripwireAlert {
@@ -71,6 +74,27 @@ export interface CaseDossier {
   ncrp_payload_preview: Record<string, any>;
 }
 
+export interface CaseEvidenceEvent {
+  event_id: string;
+  timestamp: string;
+  event_type: string;
+  original_event_id?: string | null;
+  sender_account_id: string;
+  beneficiary_account_id?: string | null;
+  beneficiary_vpa: string;
+  amount_inr: number;
+  is_canary_hit: boolean;
+  simulated_result: string;
+  zero_funds_transferred: boolean;
+}
+
+export interface GraphOverview {
+  total_nodes: number;
+  total_edges: number;
+  canary_nodes_count: number;
+  sliding_window_hours: number;
+}
+
 export interface GraphNodeItem {
   id: string;
   label: string;
@@ -91,6 +115,8 @@ export interface GraphNodeItem {
 }
 
 export interface GraphEdgeItem {
+  event_id: string;
+  original_event_id?: string | null;
   source: string | GraphNodeItem;
   target: string | GraphNodeItem;
   amount_inr: number;
@@ -99,6 +125,7 @@ export interface GraphEdgeItem {
   is_tripwire: boolean;
   is_financial: boolean;
   event_type: string;
+  is_reversed: boolean;
 }
 
 export interface EgoGraphData {

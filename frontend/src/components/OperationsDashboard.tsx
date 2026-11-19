@@ -17,25 +17,27 @@ import {
   Radio,
   ExternalLink
 } from 'lucide-react';
-import { ActiveTab, CanaryItem, CaseDossier, TripwireAlert } from '../types';
+import { ActiveTab, CanaryItem, CaseDossier, TripwireAlert, GraphOverview } from '../types';
 
 interface OperationsDashboardProps {
   canaries: CanaryItem[];
   cases: CaseDossier[];
   alerts: TripwireAlert[];
+  graphOverview: GraphOverview | null;
   setActiveTab: (tab: ActiveTab) => void;
-  onRunScenario: (scenario: 'A' | 'B' | 'C' | 'D') => void;
+  onRunScenario: (scenario: 'A' | 'B' | 'C' | 'D' | 'E') => void;
 }
 
 export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
   canaries,
   cases,
   alerts,
+  graphOverview,
   setActiveTab,
   onRunScenario
 }) => {
-  const totalHits = canaries.reduce((sum, c) => sum + c.hit_count, 0) + alerts.length;
   const activeCases = cases.filter(c => c.case_status !== 'CLOSED_UNWITTING_VICTIM' && c.case_status !== 'CLOSED_CONFIRMED_MULE').length;
+  const activeCanaries = canaries.filter(c => c.status === 'ACTIVE').length;
 
   return (
     <div className="space-y-5">
@@ -45,14 +47,14 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
           {/* Metric 1: Monitored Nodes */}
           <div className="p-3 lg:px-4 group">
             <div className="flex items-center justify-between font-mono text-micro text-ink3 uppercase tracking-wider">
-              <span>Monitored Network</span>
+              <span>Graph Entities</span>
               <Users className="w-3.5 h-3.5 text-device group-hover:scale-110 transition-transform duration-fast" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-ink tabular-nums">100,000</span>
-              <span className="font-mono text-micro text-benign font-medium">Active</span>
+              <span className="font-mono text-2xl font-bold tracking-tight text-ink tabular-nums">{graphOverview?.total_nodes.toLocaleString() ?? '—'}</span>
+              <span className="font-mono text-micro text-benign font-medium">In graph</span>
             </div>
-            <div className="font-sans text-micro text-ink3 mt-0.5">85k Retail • 10k MSME • 4,950 Mules</div>
+            <div className="font-sans text-micro text-ink3 mt-0.5">Loaded from the temporal graph</div>
           </div>
 
           {/* Metric 2: Canary Honeypots */}
@@ -62,8 +64,8 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
               <Target className="w-3.5 h-3.5 text-canary group-hover:rotate-45 transition-transform duration-normal" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-canary tabular-nums">{canaries.length}</span>
-              <span className="font-mono text-micro text-ink3">VPAs Deployed</span>
+              <span className="font-mono text-2xl font-bold tracking-tight text-canary tabular-nums">{activeCanaries}</span>
+              <span className="font-mono text-micro text-ink3">Active VPAs</span>
             </div>
             <div className="font-sans text-micro text-ink3 mt-0.5">Tripwires &amp; Consented Turncoats</div>
           </div>
@@ -71,27 +73,27 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
           {/* Metric 3: Intercepted Attacks */}
           <div className="p-3 lg:px-4 pt-4 lg:pt-3 group">
             <div className="flex items-center justify-between font-mono text-micro text-ink3 uppercase tracking-wider">
-              <span>Attacks Intercepted</span>
+              <span>Open Review Cases</span>
               <ShieldAlert className="w-3.5 h-3.5 text-alarm group-hover:scale-110 transition-transform duration-fast" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-alarm tabular-nums">{totalHits}</span>
-              <span className="font-mono text-micro text-benign font-semibold">₹0.00 Lost</span>
+              <span className="font-mono text-2xl font-bold tracking-tight text-alarm tabular-nums">{activeCases}</span>
+              <span className="font-mono text-micro text-ink3 font-semibold">Human review queue</span>
             </div>
-            <div className="font-sans text-micro text-ink3 mt-0.5">Pre-Routing CBS Sidecar Intercept</div>
+            <div className="font-sans text-micro text-ink3 mt-0.5">Loaded from persistent case records</div>
           </div>
 
           {/* Metric 4: CBS Intercept Latency */}
           <div className="p-3 lg:px-4 pt-4 lg:pt-3 group">
             <div className="flex items-center justify-between font-mono text-micro text-ink3 uppercase tracking-wider">
-              <span>CBS Triage Latency</span>
+              <span>Graph Relationships</span>
               <Zap className="w-3.5 h-3.5 text-benign group-hover:scale-110 transition-transform duration-fast" />
             </div>
             <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-benign tabular-nums">&lt; 3.8 ms</span>
-              <span className="font-mono text-micro text-ink3">Target &lt;15ms</span>
+              <span className="font-mono text-2xl font-bold tracking-tight text-benign tabular-nums">{graphOverview?.total_edges.toLocaleString() ?? '—'}</span>
+              <span className="font-mono text-micro text-ink3">Current edges</span>
             </div>
-            <div className="font-sans text-micro text-ink3 mt-0.5">O(1) Hash Map Pre-Routing Filter</div>
+            <div className="font-sans text-micro text-ink3 mt-0.5">Loaded from the temporal graph</div>
           </div>
         </div>
       </div>
@@ -155,7 +157,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     </span>
                   </div>
                   <p className="font-sans text-micro text-ink2 mt-2 leading-relaxed">
-                    Three mules converge on honeypots. Backward graph propagation unmasks mastermind <code className="font-mono text-feeder text-[11px]">FEEDER_SYNTH_007</code>.
+                    Two synthetic accounts share confirmed upstream credits and canary interactions. The graph traces a feeder candidate <code className="font-mono text-feeder text-[11px]">FEEDER_SYNTH_007</code>.
                   </p>
                 </div>
                 <button
@@ -182,7 +184,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                     </span>
                   </div>
                   <p className="font-sans text-micro text-ink2 mt-2 leading-relaxed">
-                    Bursty legitimate QR merchant flagged by rules is verified with 0 canary links—preventing a wrongful account freeze!
+                    Synthetic merchant payments appear downstream of an investigated account and remain distinct from upstream funding evidence.
                   </p>
                 </div>
                 <button
@@ -190,6 +192,33 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                   className="mt-3 w-full py-1.5 px-3 bg-benign/10 hover:bg-benign/20 border border-benign/30 text-benign font-mono text-caption font-medium rounded-chip flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                 >
                   <span>Verify Merchant</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </button>
+              </div>
+
+              {/* Scenario E: End-to-End Investigation */}
+              <div className="group bg-void/60 hover:bg-void/90 border border-line hover:border-canary/50 rounded-card p-3.5 flex flex-col justify-between transition-all duration-normal hover:-translate-y-0.5 shadow-sm">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-chip bg-canary/15 text-canary group-hover:scale-110 transition-transform duration-fast">
+                        <Share2 className="w-4 h-4" />
+                      </div>
+                      <span className="font-mono text-caption font-bold text-canary">Scenario E</span>
+                    </div>
+                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-chip bg-canary/10 text-canary border border-canary/20">
+                      Full Investigation
+                    </span>
+                  </div>
+                  <p className="font-sans text-micro text-ink2 mt-2 leading-relaxed">
+                    Ingest stable synthetic events, trace upstream funding, retain merchant and customer evidence, and open the persisted case.
+                  </p>
+                </div>
+                <button
+                  onClick={() => onRunScenario('E')}
+                  className="mt-3 w-full py-1.5 px-3 bg-canary/10 hover:bg-canary/20 border border-canary/30 text-canary font-mono text-caption font-medium rounded-chip flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <span>Run End-to-End</span>
                   <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </button>
               </div>

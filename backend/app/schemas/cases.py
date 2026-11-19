@@ -17,6 +17,20 @@ class CaseActionPayload(BaseModel):
     actor_id: str = "analyst_sharma"
     actor_role: Literal["Analyst", "Supervisor", "Auditor"] = "Analyst"
 
+
+class CaseEvidenceEvent(BaseModel):
+    event_id: str
+    timestamp: datetime
+    event_type: str
+    original_event_id: Optional[str] = None
+    sender_account_id: str
+    beneficiary_account_id: Optional[str] = None
+    beneficiary_vpa: str
+    amount_inr: float
+    is_canary_hit: bool
+    simulated_result: str
+    zero_funds_transferred: bool
+
 class CaseDossierResponse(BaseModel):
     case_id: str
     target_account_id: str

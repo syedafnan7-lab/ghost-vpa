@@ -196,7 +196,10 @@ export const LiveEventMonitor: React.FC<LiveEventMonitorProps> = ({
                         {ev.simulated_result === 'SETTLED_NORMAL' ? 'Settled: ' : 'Attempt: '}
                         ₹{ev.amount_inr.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-4 text-ink3">{ev.payment_rail}</td>
+                      <td className="py-2.5 px-4 text-ink3">
+                        {ev.event_type || 'PAYMENT_ATTEMPT'}
+                        <div className="text-[10px] text-ink3">{ev.payment_rail}{ev.original_event_id ? ` · reverses ${ev.original_event_id}` : ''}</div>
+                      </td>
                       <td className="py-2.5 px-4 font-sans">
                         {isCanary ? (
                           <span className="px-2 py-0.5 rounded-chip text-micro font-mono font-bold bg-canary/15 text-canary border border-canary/30">

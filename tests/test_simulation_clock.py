@@ -11,6 +11,7 @@ live demo would hang the server rather than pause it.
 
 import threading
 import time
+from datetime import timedelta
 
 from backend.app.core.simulation_clock import SimulationClock, clock
 
@@ -72,3 +73,12 @@ def test_clock_speed_multiplier_accelerates_time():
     clock.set_speed(1)
     elapsed_sim = (t1 - t0).total_seconds()
     assert elapsed_sim >= 1.0, f"5x multiplier advanced only {elapsed_sim:.2f}s of sim time"
+
+
+def test_clock_advance_to_is_forward_only():
+    before = clock.now()
+    target = before + timedelta(minutes=5)
+    advanced = clock.advance_to(target)
+    assert advanced >= target
+    assert clock.advance_to(before) >= target
+    clock.reset(start_time=before)
