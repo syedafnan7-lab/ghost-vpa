@@ -95,7 +95,11 @@ export const api = {
   // ML Benchmarks
   getBenchmarkResults: async (): Promise<BenchmarkMetrics> => {
     const res = await fetch(`${API_BASE}/benchmark/results`);
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Benchmark results are unavailable.');
+    }
+    return data;
   },
 
   // Audit Logs

@@ -13,8 +13,7 @@ export const ModelBenchmarking: React.FC = () => {
       try {
         const data = await api.getBenchmarkResults();
         setMetrics(data);
-      } catch (e) {
-        console.error('Failed to load benchmarks', e);
+      } catch {
         setUnavailable(true);
       } finally {
         setLoading(false);
@@ -68,9 +67,9 @@ export const ModelBenchmarking: React.FC = () => {
         <div className="flex items-start gap-3">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-canary" aria-hidden="true" />
           <div>
-            <h3 className="font-display text-sm font-medium text-ink">Benchmark results withdrawn</h3>
+            <h3 className="font-display text-sm font-medium text-ink">Benchmark unavailable</h3>
             <p className="mt-2 max-w-3xl text-caption leading-relaxed text-ink2">
-              The previous synthetic evaluation used generated label-correlated features and did not build a payment graph. Its split was not chronological, so its performance metrics are not shown. A timestamped graph benchmark with benign canary interactions is still needed.
+              No validated benchmark run is available yet.
             </p>
           </div>
         </div>
