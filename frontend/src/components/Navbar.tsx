@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Activity, 
   ShieldAlert, 
@@ -17,7 +18,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   GitFork,
-  Radio
+  Radio,
+  X
 } from 'lucide-react';
 import { ActiveTab, UserRole } from '../types';
 import { Mark } from './Mark';
@@ -48,7 +50,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   onRunScenario
 }) => {
   const [scenarioMenuOpen, setScenarioMenuOpen] = useState(false);
+  const [navigationOpen, setNavigationOpen] = useState(false);
   const scenarioMenuRef = useRef<HTMLDivElement>(null);
+  const navigationDialogRef = useRef<HTMLElement>(null);
+  const navigationTriggerRef = useRef<HTMLButtonElement>(null);
+  const navigationCloseRef = useRef<HTMLButtonElement>(null);
+
+  const closeNavigation = useCallback(() => {
+    setNavigationOpen(false);
+    window.requestAnimationFrame(() => navigationTriggerRef.current?.focus());
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -59,6 +70,33 @@ export const Navbar: React.FC<NavbarProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!navigationOpen) return;
+
+    navigationCloseRef.current?.focus();
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeNavigation();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = navigationDialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], select:not(:disabled)');
+        if (!focusable?.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [navigationOpen, closeNavigation]);
 
   const tabs: { id: ActiveTab; hotkey: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'operations', hotkey: '1', label: 'Operations', icon: Activity },
@@ -123,9 +161,18 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4 border-b border-line/60">
         {/* Brand & Platform Identity */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="group relative flex items-center justify-center p-1 rounded-panel bg-panel border border-line hover:border-canary/40 transition-colors cursor-pointer">
+          <button
+            ref={navigationTriggerRef}
+            type="button"
+            onClick={() => setNavigationOpen(true)}
+            aria-label="Open navigation"
+            aria-haspopup="dialog"
+            aria-expanded={navigationOpen}
+            className="group relative flex items-center justify-center p-1 rounded-panel bg-panel border border-line hover:border-canary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canary/70 transition-colors"
+            title="Open navigation"
+          >
             <Mark size={24} className="group-hover:rotate-12 transition-transform duration-normal ease-out" />
-          </div>
+          </button>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="font-display text-[15px] font-semibold tracking-[-0.02em] text-ink">
@@ -271,34 +318,68 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Primary Instrument Tabs */}
-      <div className="max-w-7xl mx-auto px-4">
-        <nav className="flex items-center space-x-1 overflow-x-auto no-scrollbar py-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
+      {navigationOpen && createPortal(
+        <div className="fixed inset-0 z-[60]" onClick={closeNavigation}>
+          <div className="absolute inset-0 bg-void/65 backdrop-blur-[1px]" aria-hidden="true" />
+          <aside
+            ref={navigationDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Primary navigation"
+            onClick={(e) => e.stopPropagation()}
+            className="absolute inset-y-0 left-0 flex w-[min(20rem,calc(100vw-2rem))] flex-col border-r border-line bg-panel shadow-2xl animate-nav-drawer"
+          >
+            <div className="flex items-center justify-between border-b border-line px-4 py-4">
+              <div className="flex items-center gap-3">
+                <Mark size={24} />
+                <div>
+                  <div className="font-display text-sm font-semibold text-ink">Ghost-VPA</div>
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-ink3">Workbench navigation</div>
+                </div>
+              </div>
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`group flex items-center gap-2 px-3 py-1.5 text-caption font-mono rounded-chip transition-all duration-fast whitespace-nowrap active:scale-[0.98] ${
-                  isActive
-                    ? 'bg-raised text-ink border border-canary/40 font-medium shadow-[0_1px_8px_rgba(245,165,36,0.15)]'
-                    : 'text-ink2 hover:text-ink hover:bg-raised/40 border border-transparent'
-                }`}
+                ref={navigationCloseRef}
+                type="button"
+                onClick={closeNavigation}
+                aria-label="Close navigation"
+                className="rounded-chip border border-line p-2 text-ink2 hover:bg-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canary/70"
               >
-                <kbd className={`text-[10px] px-1 py-0.2 rounded font-mono ${isActive ? 'bg-canary/20 text-canary font-bold' : 'text-ink3 group-hover:text-ink2'}`}>
-                  {tab.hotkey}
-                </kbd>
-                <Icon className={`w-3.5 h-3.5 transition-transform duration-fast group-hover:-translate-y-0.5 ${
-                  isActive ? 'text-canary scale-105' : 'text-ink3 group-hover:text-ink2'
-                }`} />
-                <span className="font-sans text-caption font-medium">{tab.label}</span>
+                <X className="h-4 w-4" />
               </button>
-            );
-          })}
-        </nav>
-      </div>
+            </div>
+            <nav aria-label="Workbench sections" className="flex-1 space-y-1 overflow-y-auto p-3">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      closeNavigation();
+                    }}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`group flex w-full items-center gap-3 rounded-card border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canary/70 ${
+                      isActive
+                        ? 'border-canary/30 bg-raised text-ink'
+                        : 'border-transparent text-ink2 hover:border-line hover:bg-raised/70 hover:text-ink'
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-canary' : 'text-ink3 group-hover:text-ink2'}`} />
+                    <span className="flex-1 font-sans text-body font-medium">{tab.label}</span>
+                    <kbd className="rounded border border-line px-1.5 py-0.5 font-mono text-[10px] text-ink3">{tab.hotkey}</kbd>
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="border-t border-line px-4 py-3 font-mono text-[10px] text-ink3">
+              Select a section or press 1–7 to navigate
+            </div>
+          </aside>
+        </div>,
+        document.body
+      )}
     </header>
   );
 };

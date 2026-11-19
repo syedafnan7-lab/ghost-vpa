@@ -139,6 +139,7 @@
 
   /* Emerge: an alert row arriving from the websocket slides in from the top. */
   .animate-emerge { animation: emerge var(--motion-normal) var(--ease-out) both; }
+  .animate-nav-drawer { animation: navDrawerIn var(--motion-fast) var(--ease-out) both; }
 }
 
 @layer components {
@@ -179,6 +180,11 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes navDrawerIn {
+  from { opacity: 0.7; transform: translateX(-100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 /* Chain-ribbon: the tip hash marching along a merkle-style trail. */
 @keyframes chainRibbon {
   from { transform: translateX(-100%); }
@@ -210,6 +216,7 @@
   .animate-rise,
   .animate-fade-in,
   .animate-emerge,
+  .animate-nav-drawer,
   .animate-rise-stagger > * {
     animation: none !important;
     opacity: 1 !important;
