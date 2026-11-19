@@ -158,9 +158,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-void/85 backdrop-blur-md">
       {/* Top Precision Bar */}
-      <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4 border-b border-line/60">
+      <div className="max-w-7xl mx-auto w-full px-3 md:px-4 py-1.5 flex items-center justify-between gap-3 border-b border-line/60">
         {/* Brand & Platform Identity */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             ref={navigationTriggerRef}
             type="button"
@@ -168,7 +168,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             aria-label="Open navigation"
             aria-haspopup="dialog"
             aria-expanded={navigationOpen}
-            className="group relative flex items-center justify-center p-1 rounded-panel bg-panel border border-line hover:border-canary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canary/70 transition-colors"
+            className="group relative flex items-center justify-center p-1 rounded-panel hover:bg-panel/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-canary/70 transition-colors"
             title="Open navigation"
           >
             <Mark size={24} className="group-hover:rotate-12 transition-transform duration-normal ease-out" />
@@ -178,32 +178,32 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-display text-[15px] font-semibold tracking-[-0.02em] text-ink">
                 Ghost-VPA
               </span>
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-canary/10 border border-canary/20 text-canary text-[10px] font-mono">
+              <span className="flex items-center gap-1.5 text-canary text-[10px] font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-canary animate-pulse" />
                 <span>CANARY RAIL ACTIVE</span>
               </span>
             </div>
-            <span className="font-mono text-[11px] text-ink3 leading-none mt-0.5 hidden sm:inline">
+            <span className="font-mono text-[10px] text-ink3 leading-none mt-0.5 hidden md:inline">
               Pre-Routing Interdiction • RBI 2026 Annex III SOP
             </span>
           </div>
         </div>
 
         {/* Right Tools: Telemetry Clock, Speed Controls, Scenario Launcher, RBAC & Showcase Bridge */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
           {/* Sim Clock */}
-          <div className="flex items-center gap-1.5 bg-panel/80 px-2.5 py-1 rounded-chip border border-line text-caption font-mono">
-            <Clock className="w-3.5 h-3.5 text-canary animate-pulse" />
+          <div className="flex items-center gap-1.5 px-1.5 py-1 text-caption font-mono text-ink2">
+            <Clock className="w-3.5 h-3.5 text-canary" />
             <span className="text-ink font-medium tabular-nums">
               {simTime ? new Date(simTime).toLocaleTimeString() : '09:00:00 UTC'}
             </span>
           </div>
 
           {/* Simulation Controls (Play/Pause & Speed) */}
-          <div className="flex items-center gap-0.5 bg-panel/80 p-0.5 rounded-chip border border-line">
+          <div className="flex items-center gap-0.5 border-l border-line/70 pl-1">
             <button
               onClick={onTogglePlay}
-              className={`px-2 py-1 rounded text-caption font-mono flex items-center gap-1 active:scale-95 transition-all ${
+              className={`px-1.5 py-1 rounded text-micro font-mono flex items-center gap-1 active:scale-95 transition-all ${
                 isPaused
                   ? 'bg-canary text-void font-bold shadow-sm'
                   : 'text-ink2 hover:text-ink hover:bg-raised'
@@ -213,14 +213,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               {isPaused ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3" />}
               <span className="text-micro font-medium">{isPaused ? 'RUN' : 'PAUSE'}</span>
             </button>
-            <div className="flex items-center border-l border-line/60 pl-0.5">
+              <div className="flex items-center border-l border-line/70 pl-0.5">
               {[1, 5, 20].map((s) => (
                 <button
                   key={s}
                   onClick={() => onSetSpeed(s)}
                   className={`px-1.5 py-0.5 rounded text-micro font-mono active:scale-95 transition-all ${
                     speed === s
-                      ? 'bg-raised text-canary font-bold shadow-sm'
+                      ? 'text-canary font-bold'
                       : 'text-ink3 hover:text-ink2'
                   }`}
                   title={`Run simulation at ${s}x speed`}
@@ -235,7 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="relative" ref={scenarioMenuRef}>
             <button
               onClick={() => setScenarioMenuOpen(!scenarioMenuOpen)}
-              className="group flex items-center gap-1.5 bg-panel/80 hover:bg-raised text-ink2 hover:text-ink px-2.5 py-1 rounded-chip border border-line hover:border-canary/40 text-caption font-mono active:scale-95 transition-all shadow-sm"
+              className="group flex items-center gap-1.5 px-2 py-1 rounded-chip text-ink2 hover:text-ink hover:bg-panel/70 text-caption font-mono transition-colors"
               title="Launch deterministic attack scenarios"
             >
               <Sparkles className="w-3.5 h-3.5 text-canary group-hover:rotate-12 transition-transform duration-normal ease-out" />
@@ -289,7 +289,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Demo role selector (not authentication) */}
           <div 
-            className="flex items-center gap-1.5 bg-panel/80 px-2 py-1 rounded-chip border border-line text-caption font-mono"
+            className="flex items-center gap-1.5 border-l border-line/70 pl-2 text-caption font-mono"
             title="Demo label only; it does not authenticate or authorize a user"
           >
             <UserCheck className="w-3.5 h-3.5 text-canary" />
@@ -309,7 +309,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             href="http://localhost:5174"
             target="_blank"
             rel="noreferrer"
-            className="group hidden xl:flex items-center gap-1 px-2.5 py-1 text-micro font-mono text-ink2 hover:text-ink border border-line hover:border-canary/40 rounded-chip bg-panel/80 hover:bg-raised active:scale-95 transition-all"
+            className="group hidden xl:flex items-center gap-1 px-1.5 py-1 text-micro font-mono text-ink3 hover:text-ink transition-colors"
             title="Open public technical showcase website on Port 5174"
           >
             <span>Showcase</span>

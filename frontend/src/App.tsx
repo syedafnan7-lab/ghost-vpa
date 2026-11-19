@@ -214,7 +214,7 @@ export const App: React.FC = () => {
           onRunScenario={handleRunScenario}
         />
 
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 transition-all duration-normal ease-out">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-3 py-3 md:px-5 md:py-4 transition-all duration-normal ease-out">
           <div key={activeTab} className="animate-fade-in">
             {activeTab === 'operations' && (
               <OperationsDashboard

@@ -40,57 +40,57 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
   const activeCanaries = canaries.filter(c => c.status === 'ACTIVE').length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* 1. Unified Real-Time Telemetry Bar (No cluttered separate cards) */}
-      <div className="bg-panel/90 backdrop-blur-md border border-line rounded-panel shadow-panel p-4">
+      <div className="border-y border-line/80 bg-panel/30 px-2 py-2">
         <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-line/60">
           {/* Metric 1: Monitored Nodes */}
-          <div className="p-3 lg:px-4 group">
+          <div className="p-2.5 lg:px-3 group">
             <div className="flex items-center justify-between font-mono text-micro text-ink3 uppercase tracking-wider">
               <span>Graph Entities</span>
               <Users className="w-3.5 h-3.5 text-device group-hover:scale-110 transition-transform duration-fast" />
             </div>
-            <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-ink tabular-nums">{graphOverview?.total_nodes.toLocaleString() ?? '—'}</span>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="font-mono text-xl font-bold tracking-tight text-ink tabular-nums">{graphOverview?.total_nodes.toLocaleString() ?? '—'}</span>
               <span className="font-mono text-micro text-benign font-medium">In graph</span>
             </div>
             <div className="font-sans text-micro text-ink3 mt-0.5">Loaded from the temporal graph</div>
           </div>
 
           {/* Metric 2: Canary Honeypots */}
-          <div className="p-3 lg:px-4 pt-4 lg:pt-3 group">
+          <div className="p-2.5 lg:px-3 pt-3 lg:pt-2.5 group">
             <div className="flex items-center justify-between font-mono text-micro text-ink3 uppercase tracking-wider">
               <span>Honeypot Decoys</span>
               <Target className="w-3.5 h-3.5 text-canary group-hover:rotate-45 transition-transform duration-normal" />
             </div>
-            <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-canary tabular-nums">{activeCanaries}</span>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="font-mono text-xl font-bold tracking-tight text-canary tabular-nums">{activeCanaries}</span>
               <span className="font-mono text-micro text-ink3">Active VPAs</span>
             </div>
             <div className="font-sans text-micro text-ink3 mt-0.5">Tripwires &amp; Consented Turncoats</div>
           </div>
 
           {/* Metric 3: Intercepted Attacks */}
-          <div className="p-3 lg:px-4 pt-4 lg:pt-3 group">
+          <div className="p-2.5 lg:px-3 pt-3 lg:pt-2.5 group">
             <div className="flex items-center justify-between font-mono text-micro text-ink3 uppercase tracking-wider">
               <span>Open Review Cases</span>
               <ShieldAlert className="w-3.5 h-3.5 text-alarm group-hover:scale-110 transition-transform duration-fast" />
             </div>
-            <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-alarm tabular-nums">{activeCases}</span>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="font-mono text-xl font-bold tracking-tight text-alarm tabular-nums">{activeCases}</span>
               <span className="font-mono text-micro text-ink3 font-semibold">Human review queue</span>
             </div>
             <div className="font-sans text-micro text-ink3 mt-0.5">Loaded from persistent case records</div>
           </div>
 
           {/* Metric 4: CBS Intercept Latency */}
-          <div className="p-3 lg:px-4 pt-4 lg:pt-3 group">
+          <div className="p-2.5 lg:px-3 pt-3 lg:pt-2.5 group">
             <div className="flex items-center justify-between font-mono text-micro text-ink3 uppercase tracking-wider">
               <span>Graph Relationships</span>
               <Zap className="w-3.5 h-3.5 text-benign group-hover:scale-110 transition-transform duration-fast" />
             </div>
-            <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-benign tabular-nums">{graphOverview?.total_edges.toLocaleString() ?? '—'}</span>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="font-mono text-xl font-bold tracking-tight text-benign tabular-nums">{graphOverview?.total_edges.toLocaleString() ?? '—'}</span>
               <span className="font-mono text-micro text-ink3">Current edges</span>
             </div>
             <div className="font-sans text-micro text-ink3 mt-0.5">Loaded from the temporal graph</div>
@@ -99,12 +99,12 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
       </div>
 
       {/* 2. Primary Cockpit Grid: Threat Director (Left 2/3) + Statutory Compliance (Right 1/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Left Column: Interactive Scenario Director & Live Stream (2 Columns) */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="xl:col-span-2 space-y-4">
           {/* Tactical Scenario Director */}
-          <div className="bg-panel/90 backdrop-blur-md border border-line rounded-panel p-5 shadow-panel">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-line">
+          <div className="border-y border-line/80 bg-panel/25 px-3 py-3 md:px-4">
+            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-line/70">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-canary animate-pulse" />
                 <h3 className="font-display text-sm font-semibold text-ink">
@@ -114,9 +114,9 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
               <span className="font-mono text-micro text-ink3">Reproducible Test Matrix</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
               {/* Scenario A: Tripwire */}
-              <div className="group bg-void/60 hover:bg-void/90 border border-line hover:border-alarm/50 rounded-card p-3.5 flex flex-col justify-between transition-all duration-normal hover:-translate-y-0.5 shadow-sm">
+              <div className="group flex min-w-0 flex-col justify-between border-b border-line/60 px-2 py-3 transition-colors hover:bg-panel/40">
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                       </div>
                       <span className="font-mono text-caption font-bold text-alarm">Scenario A</span>
                     </div>
-                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-chip bg-alarm/10 text-alarm border border-alarm/20">
+                    <span className="font-mono text-[10px] uppercase tracking-wide text-alarm/90">
                       Canary Tripwire
                     </span>
                   </div>
@@ -135,7 +135,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                 </div>
                 <button
                   onClick={() => onRunScenario('A')}
-                  className="mt-3 w-full py-1.5 px-3 bg-alarm/10 hover:bg-alarm/20 border border-alarm/30 text-alarm font-mono text-caption font-medium rounded-chip flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  className="mt-2 self-start inline-flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-caption font-semibold text-alarm hover:bg-alarm/10 active:scale-[0.98] transition-colors"
                 >
                   <span>Trigger Tripwire</span>
                   <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -143,7 +143,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
               </div>
 
               {/* Scenario B: Feeder Unmasking */}
-              <div className="group bg-void/60 hover:bg-void/90 border border-line hover:border-feeder/50 rounded-card p-3.5 flex flex-col justify-between transition-all duration-normal hover:-translate-y-0.5 shadow-sm">
+              <div className="group flex min-w-0 flex-col justify-between border-b border-line/60 px-2 py-3 transition-colors hover:bg-panel/40">
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -152,7 +152,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                       </div>
                       <span className="font-mono text-caption font-bold text-feeder">Scenario B</span>
                     </div>
-                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-chip bg-feeder/10 text-feeder border border-feeder/20">
+                    <span className="font-mono text-[10px] uppercase tracking-wide text-feeder/90">
                       Feeder Unmasking
                     </span>
                   </div>
@@ -162,7 +162,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                 </div>
                 <button
                   onClick={() => onRunScenario('B')}
-                  className="mt-3 w-full py-1.5 px-3 bg-feeder/10 hover:bg-feeder/20 border border-feeder/30 text-feeder font-mono text-caption font-medium rounded-chip flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  className="mt-2 self-start inline-flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-caption font-semibold text-feeder hover:bg-feeder/10 active:scale-[0.98] transition-colors"
                 >
                   <span>Unmask Feeder</span>
                   <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -170,7 +170,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
               </div>
 
               {/* Scenario C: Benign Merchant False-Positive Guard */}
-              <div className="group bg-void/60 hover:bg-void/90 border border-line hover:border-benign/50 rounded-card p-3.5 flex flex-col justify-between transition-all duration-normal hover:-translate-y-0.5 shadow-sm">
+              <div className="group flex min-w-0 flex-col justify-between border-b border-line/60 px-2 py-3 transition-colors hover:bg-panel/40">
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -179,7 +179,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                       </div>
                       <span className="font-mono text-caption font-bold text-benign">Scenario C</span>
                     </div>
-                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-chip bg-benign/10 text-benign border border-benign/20">
+                    <span className="font-mono text-[10px] uppercase tracking-wide text-benign/90">
                       False-Positive Guard
                     </span>
                   </div>
@@ -189,7 +189,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                 </div>
                 <button
                   onClick={() => onRunScenario('C')}
-                  className="mt-3 w-full py-1.5 px-3 bg-benign/10 hover:bg-benign/20 border border-benign/30 text-benign font-mono text-caption font-medium rounded-chip flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  className="mt-2 self-start inline-flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-caption font-semibold text-benign hover:bg-benign/10 active:scale-[0.98] transition-colors"
                 >
                   <span>Verify Merchant</span>
                   <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -197,7 +197,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
               </div>
 
               {/* Scenario E: End-to-End Investigation */}
-              <div className="group bg-void/60 hover:bg-void/90 border border-line hover:border-canary/50 rounded-card p-3.5 flex flex-col justify-between transition-all duration-normal hover:-translate-y-0.5 shadow-sm">
+              <div className="group flex min-w-0 flex-col justify-between border-b border-line/60 px-2 py-3 transition-colors hover:bg-panel/40">
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -206,7 +206,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                       </div>
                       <span className="font-mono text-caption font-bold text-canary">Scenario E</span>
                     </div>
-                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-chip bg-canary/10 text-canary border border-canary/20">
+                    <span className="font-mono text-[10px] uppercase tracking-wide text-canary/90">
                       Full Investigation
                     </span>
                   </div>
@@ -216,7 +216,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                 </div>
                 <button
                   onClick={() => onRunScenario('E')}
-                  className="mt-3 w-full py-1.5 px-3 bg-canary/10 hover:bg-canary/20 border border-canary/30 text-canary font-mono text-caption font-medium rounded-chip flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  className="mt-2 self-start inline-flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-caption font-semibold text-canary hover:bg-canary/10 active:scale-[0.98] transition-colors"
                 >
                   <span>Run End-to-End</span>
                   <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -224,7 +224,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
               </div>
 
               {/* Scenario D: Layering Network */}
-              <div className="group bg-void/60 hover:bg-void/90 border border-line hover:border-device/50 rounded-card p-3.5 flex flex-col justify-between transition-all duration-normal hover:-translate-y-0.5 shadow-sm">
+              <div className="group flex min-w-0 flex-col justify-between border-b border-line/60 px-2 py-3 transition-colors hover:bg-panel/40">
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -233,7 +233,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                       </div>
                       <span className="font-mono text-caption font-bold text-device">Scenario D</span>
                     </div>
-                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-chip bg-device/10 text-device border border-device/20">
+                    <span className="font-mono text-[10px] uppercase tracking-wide text-device/90">
                       Layering Chain
                     </span>
                   </div>
@@ -243,7 +243,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                 </div>
                 <button
                   onClick={() => onRunScenario('D')}
-                  className="mt-3 w-full py-1.5 px-3 bg-device/10 hover:bg-device/20 border border-device/30 text-device font-mono text-caption font-medium rounded-chip flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  className="mt-2 self-start inline-flex items-center gap-1.5 rounded px-1.5 py-1 font-mono text-caption font-semibold text-device hover:bg-device/10 active:scale-[0.98] transition-colors"
                 >
                   <span>Trace 4-Hop Ring</span>
                   <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -253,8 +253,8 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
           </div>
 
           {/* Real-time Telemetry Feed (Recent Honeypot Interceptions) */}
-          <div className="bg-panel/90 backdrop-blur-md border border-line rounded-panel p-5 shadow-panel">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-line">
+          <div className="border-y border-line/80 bg-panel/25 px-3 py-3 md:px-4">
+            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-line/70">
               <div className="flex items-center gap-2">
                 <Radio className="w-4 h-4 text-canary animate-pulse" />
                 <h3 className="font-display text-sm font-semibold text-ink">Recent Honeypot Tripwire Interceptions</h3>
@@ -276,11 +276,11 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-line/60">
                 {alerts.slice(0, 4).map((a) => (
                   <div 
                     key={a.alert_id} 
-                    className="group bg-void/70 hover:bg-void border border-line hover:border-line-strong rounded-card p-3 flex items-center justify-between transition-colors"
+                    className="group flex items-center justify-between gap-3 py-2.5 transition-colors hover:bg-panel/45"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-alarm animate-pulse shrink-0" />
@@ -315,22 +315,22 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
         </div>
 
         {/* Right Column: Statutory RBI 60-Day SLA & Triage Queue (1 Column) */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Statutory SLA Stepper Card */}
-          <div className="bg-panel/90 backdrop-blur-md border border-line rounded-panel p-5 shadow-panel flex flex-col justify-between">
+          <div className="border-y border-line/80 bg-panel/25 px-3 py-3 md:px-4 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-line">
                 <div className="flex items-center gap-2">
                   <Scale className="w-4 h-4 text-canary" />
                   <h3 className="font-display text-sm font-semibold text-ink">Draft SOP Timeline Simulation</h3>
                 </div>
-                <span className="font-mono text-[10px] px-2 py-0.5 rounded-chip bg-benign/15 text-benign border border-benign/30 font-semibold">
-                  PROTOTYPE FIELDS
+                <span className="whitespace-nowrap font-mono text-micro uppercase tracking-wide text-ink3">
+                  Prototype
                 </span>
               </div>
 
               {/* 3-Stage Visual Pipeline */}
-              <div className="mt-4 space-y-3.5">
+              <div className="mt-3 space-y-3">
                 {/* Stage 1 */}
                 <div className="flex items-start gap-3">
                   <div className="p-1 rounded-full bg-benign/15 text-benign shrink-0 mt-0.5">
@@ -385,7 +385,7 @@ export const OperationsDashboard: React.FC<OperationsDashboardProps> = ({
           </div>
 
           {/* Cryptographic Audit Trail Card */}
-          <div className="bg-panel/90 backdrop-blur-md border border-line rounded-panel p-5 shadow-panel">
+          <div className="border-y border-line/80 bg-panel/25 px-3 py-3 md:px-4">
             <div className="flex items-center justify-between pb-2 border-b border-line mb-3">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-canary" />
