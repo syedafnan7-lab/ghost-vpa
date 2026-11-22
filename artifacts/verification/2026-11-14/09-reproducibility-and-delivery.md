@@ -14,8 +14,7 @@
 | `.env.example` | Environment template | Present, contains zero leaked secrets, defaults to safe simulation | **PASS** |
 | `docs/designs/ghost-vpa-architecture.md` | System architecture v2.0 | Incorporates all EGM Goldfish review resolutions | **PASS** |
 | `docs/benchmark-results.md` | ML evaluation metrics | Contains benchmark table and confusion matrices | **PASS** |
-| `docs/demo-runbook.md` | 4-minute live judging script | Step-by-step click guide with fallback options | **PASS** |
-| `docs/judge-pitch.md` | Hackathon pitch strategy & anticipated Q&A | Thorough domain rationale and defensibility | **PASS** |
+| `docs/demo-runbook.md` | Prototype walkthrough | Step-by-step workflow guide with fallback options | **PASS** |
 | `start-ghostvpa.bat` | One-click parallel launcher | Automates Uvicorn backend + Vite frontend startup | **PASS** |
 
 ---

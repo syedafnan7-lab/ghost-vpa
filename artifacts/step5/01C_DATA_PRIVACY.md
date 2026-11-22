@@ -94,7 +94,7 @@ windows-registry-key, mutex, user-account, process, network-traffic, artifact,
 x509-certificate, software`): **not present.**
 
 - `stix2validator` is **not installed** in this environment, so the claim in
-  `FINAL-VERIFICATION-REPORT.md:44` ("OASIS STIX 2.1 JSON schema validated")
+  an earlier verification report ("OASIS STIX 2.1 JSON schema validated")
   **cannot be reproduced**.
 - A strict validator rejects `payment-account:vpa`.
 - Interoperability: `ncrp_cfcfrms` / `TAXII` consumers parsing this pattern

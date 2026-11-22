@@ -66,8 +66,8 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-2 border-t border-line pt-6 font-mono text-micro text-ink3 md:flex-row md:items-center md:justify-between">
-          <span>AIMIT × St Aloysius × RBIH FinTech Innovation Hackathon 2026 · Track 1</span>
-          <span>Apache 2.0 · Built from the gems-ghost branch</span>
+          <span>Ghost-VPA · Synthetic investigation prototype</span>
+          <span>Apache 2.0</span>
         </div>
       </div>
     </footer>

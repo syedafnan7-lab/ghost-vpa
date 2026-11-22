@@ -9,7 +9,7 @@ Builds on probe10. Two independent defects found:
      so any node that RECEIVED money from a suspect inherits the full score.
      An innocent beneficiary of a mule scores 1.000000 -- the maximum, higher
      than the feeder ever reaches. This is the exact false-positive mechanism
-     the pitch claims to eliminate (judge-pitch.md Q3).
+     the earlier project narrative claims to eliminate.
 
 The fix is to attribute blame only backwards along the payment direction:
   R(u) <- sum over beneficiaries v of u of w * R(v)      (out_edges only)

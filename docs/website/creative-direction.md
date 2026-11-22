@@ -110,7 +110,7 @@ Motion is used for **explanation and state**, not decoration. The gate: if an an
 | 06 | The benchmark | Honest experimental 100k-node comparison + explicit caveats. |
 | 07 | The architecture | Four tiers and the sidecar integration boundary. |
 | 08 | The boundaries | Inviolable invariants, draft-regulation truthfulness, implemented vs proposed. |
-| — | Footer | Repository, hackathon, licence, disclaimer. |
+| — | Footer | Repository, licence, and prototype disclaimer. |
 
 Scenario C (benign merchant lookalike) lives inside 04 and 06 as the false-positive counter-example, because that is where its evidence matters.
 

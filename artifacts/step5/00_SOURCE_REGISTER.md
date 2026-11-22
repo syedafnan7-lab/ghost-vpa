@@ -38,7 +38,6 @@ network sources were used in Stage 1; all evidence is local and reproducible.
 | D2 | `README.md` | Headline metrics 99.5% / +27.1% / −94.4% |
 | D3 | `docs/benchmark-results.md` | Same headline metrics |
 | D4 | `docs/benchmark-methodology.md` | "No single feature encodes the label"; "strict chronological split" |
-| D5 | `docs/judge-pitch.md` | Pitch claims |
 | D6 | `concepts_brief.md` | Concept claims |
 | D7 | `docs/designs/ghost-vpa-architecture.md` | Async worker pool, motif thresholds ≥4/≥5, convergence <10⁻⁴, parquet artifact |
 | D8 | `docs/research/research-register.md` | Neo4j/PyG/TGN "Adopted"; CS-LP >92% precision |
@@ -47,9 +46,7 @@ network sources were used in Stage 1; all evidence is local and reproducible.
 | D11 | `docs/production-integration-boundaries.md` | Suspense GL code, adapter status |
 | D12 | `docs/demo-runbook.md` | On-stage visual promises |
 | D13 | `docs/remediation/remediation-register.md` | "REM-01 Fixed & Verified / Zero oracle features" |
-| D14 | `artifacts/verification/2026-11-14/FINAL-VERIFICATION-REPORT.md` | "VERIFIED FOR HACKATHON DEMONSTRATION"; "8 tests pass"; STIX "validated" |
 | D15 | `artifacts/verification/2026-11-14/04-benchmark-reproduction.md` | Original leakage finding, superseded |
-| D16 | `briefs/source_brief.md` | PostgreSQL/Neo4j/Cypher exporter claims |
 | D17 | `frontend/src/components/ModelBenchmarking.tsx` | Live metric display, hardcoded 20.1/17.2/12.1 fallbacks |
 | D18 | `frontend/src/components/InvestigationWorkbench.tsx` | Case dossier UI |
 | D19 | `frontend/src/services/api.ts` | API client, role header |

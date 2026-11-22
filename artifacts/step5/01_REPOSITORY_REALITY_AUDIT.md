@@ -1,7 +1,6 @@
 # STEP 5 — STAGE 1: REPOSITORY REALITY AUDIT
 
 **Project:** Ghost-VPA — Bank-Controlled Honeypot VPAs & Canary-Seeded Graph Intelligence
-**Competition:** St Aloysius Foundation / AIMIT FinTech Hackathon 2026 × RBIH — Track 1, Digital Payments Fraud Detection & Prevention
 **Audit date:** 2026-11-15 → 2026-11-16 · **Branch:** `main` @ `61c86a3`
 **Method:** source inspection, live execution, ablation experiments, **no source modification** (see `01D`)
 
@@ -51,7 +50,7 @@ What is not supportable, and what a technically-competent judge will find:
   code path.
 - **"Strict chronological split" is a row-order split.** No timestamp exists.
   A previous independent audit graded this "Gate 7: Leakage-Free Benchmark —
-  PASSED" and "VERIFIED FOR HACKATHON DEMONSTRATION". On the evidence above, that
+  PASSED". On the evidence above, that
   verdict is not sustainable.
 - **The honeypot is assumed a perfect oracle** (P=1.000, R=0.193) because the
   generator *cannot emit a benign canary hit*. Real VPA harvesting would break
@@ -86,8 +85,8 @@ numbers* are not. The demo will work. The defence of the metrics will not.
 | 16 | Base-rate / false-positive modelling | **6** | No benign-canary-hit injection anywhere |
 | 17 | Authentication | **6** | 13 endpoints, zero auth dependency (01C §C.7) |
 | 18 | Graph persistence / rehydration | **6** | In-memory singleton; restart empties graph, `payment_events` survive |
-| 19 | PostgreSQL | **5** | Claimed in `source_brief.md:43`; only SQLite/WAL present |
-| 20 | Neo4j + Cypher exporter | **5** | Claimed in `source_brief.md:43`, `research-register.md:92`; **no such code** |
+| 19 | PostgreSQL | **5** | Described in an earlier project brief; only SQLite/WAL present |
+| 20 | Neo4j + Cypher exporter | **5** | Described in an earlier project brief and `research-register.md`; **no such code** |
 | 21 | PyTorch Geometric / TGN / EvolveGCN | **5** | "Adopted" (`research-register.md:88,90`); **not in requirements, no code** |
 | 22 | SHAP feature importance | **6** | Claimed line 91; **not implemented** (REM-05 relabelled to gain) |
 | 23 | Async worker pool / `asyncio.Queue` | **5** | `architecture.md:34,83`; absent from `main.py` |
@@ -177,7 +176,7 @@ No timestamp column exists. `benchmark.py:68` labels an `.iloc` row-order split
 as `"Strict Chronological Train (70%) / Holdout Test (30%)"`, and the UI renders
 it as a protocol badge. Measured train/test positive rates 0.1450 / 0.1492 —
 random interleaving. `04-benchmark-reproduction.md` and
-`FINAL-VERIFICATION-REPORT.md` "Gate 7: PASSED" both assert the opposite.
+An earlier verification report's "Gate 7: PASSED" asserts the opposite.
 
 ### 3.6 The honeypot's precision is assumed, not measured
 
@@ -195,7 +194,7 @@ untested assumption.
 
 | Claim | Source | Reality |
 |---|---|---|
-| PostgreSQL + Neo4j + Cypher exporter | `source_brief.md:43`, `research-register.md:92` | SQLite/WAL only; no Neo4j import |
+| PostgreSQL + Neo4j + Cypher exporter | Earlier project brief, `research-register.md:92` | SQLite/WAL only; no Neo4j import |
 | PyG / TGN / EvolveGCN "Adopted" | `research-register.md:88,90` | Absent from `requirements.txt` and code |
 | SHAP interpretable features | `research-register.md:91` | Not implemented (REM-05 relabelled to gain) |
 | Async Worker Pool (`to_thread`) | `architecture.md:34` | Absent from `main.py` |
@@ -206,10 +205,10 @@ untested assumption.
 | `data/benchmark_100k.parquet` | `architecture.md` | Never written |
 | STIX "sanitize all internal node IDs" | `threat-model.md:29` | No redaction code (01C §C.4) |
 | `require_role("SUPERVISOR")` guards | `threat-model.md:31` | Function does not exist |
-| RBAC as "server-side enforcement" | `FINAL-VERIFICATION-REPORT.md:42` | Client header, no authentication |
-| Sub-15ms latency | `FINAL-VERIFICATION-REPORT.md:18` | `test_triage_engine.py` asserts **<50 ms** |
-| "All 8 tests pass" | `FINAL-VERIFICATION-REPORT.md:45` | Now **23 tests**; the note is stale |
-| "94.4% FPR reduction", "+27.1% lift", "0.1% FPR" | `README.md`, `benchmark-results.md`, `judge-pitch.md` | Generator artefact (§3.2) |
+| RBAC as "server-side enforcement" | Earlier verification report | Client header, no authentication |
+| Sub-15ms latency | Earlier verification report | `test_triage_engine.py` asserts **<50 ms** |
+| "All 8 tests pass" | Earlier verification report | Now **23 tests**; the note is stale |
+| "94.4% FPR reduction", "+27.1% lift", "0.1% FPR" | Earlier README and `benchmark-results.md` | Generator artefact (§3.2) |
 
 ---
 

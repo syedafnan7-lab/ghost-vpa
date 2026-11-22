@@ -1,7 +1,7 @@
 # Ghost-VPA Imported Tools, Dependencies & License Inventory
 
 **Project:** Ghost-VPA  
-**Version:** 1.0.0-hackathon  
+**Version:** 1.0.0
 **License:** Apache-2.0 (Prototype Source)
 
 ---

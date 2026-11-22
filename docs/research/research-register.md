@@ -1,8 +1,6 @@
 # Ghost-VPA Research Register & Regulatory Feasibility Matrix
 
 **Project:** Ghost-VPA — Bank-Controlled Honeypot VPAs  
-**Hackathon:** St Aloysius × RBIH FinTech Innovation Hackathon 2026  
-**Track:** Digital Payments Fraud Detection and Prevention  
 **Date:** November 2026  
 **Status:** Living Research Document — Pre-Design Milestone
 
@@ -32,7 +30,7 @@
   - Ghost-VPA strictly adheres to a **bank-side sidecar architecture**. No modifications to NPCI core switches, ISO 8583 message specs, or UPI 2.0 specs are required.
   - When a transaction query (`ReqPay` / `ReqValAdd`) reaches the beneficiary bank CBS/PSP, the Ghost-VPA canary lookup intercepts the destination handle before posting to customer ledgers.
   - In a live pilot, incoming funds are isolated into a bank-controlled internal suspense/escrow GL (`GL_SUSPECT_CANARY_ESCROW`), preserving authentic beneficiary name validation while preventing any onward debit.
-  - In this hackathon demonstration, all payments are processed through a deterministic multi-bank simulator with zero real fund transfers.
+  - In this prototype, all payments are processed through a deterministic multi-bank simulator with zero real fund transfers.
 
 ### 1.3 Legal & Data Privacy Boundaries (DPDP Act 2023 & PMLA 2002)
 - **Prevention of Money Laundering Act (PMLA), 2002:** Strictly forbids financial institutions from creating synthetic accounts or fictitious KYC identities. Ghost-VPA completely complies by **never generating synthetic customer KYC accounts**. Honeypots are either:

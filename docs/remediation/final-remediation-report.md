@@ -3,7 +3,6 @@
 > **Superseded notice (17 Nov 2026):** This is a historical report. Its benchmark methodology and results were independently found invalid because the generator used label-correlated features, constructed no graph, had no timestamps, and split by row order. The reported accuracy, precision, recall, AUC, FPR, feature-importance, and latency figures are withdrawn and must not be presented as performance evidence. See `artifacts/step5/CODEX_COMPLETE_PROJECT_REVIEW.md` and `docs/benchmark-results.md` for the current assessment.
 
 **Project:** Ghost-VPA — Bank-Controlled Honeypot VPAs & Canary-Seeded Graph Intelligence  
-**Hackathon:** St Aloysius × RBIH FinTech Innovation Hackathon 2026 (Track 1)  
 **Branch:** `gems-ghost`  
 **Base Commit:** `c393636`  
 **Date:** November 15, 2026  
@@ -110,7 +109,7 @@ All three models are evaluated on the exact same **chronological 70% train / 30%
 ### 4.1 Suspense GL vs Pre-Routing CBS Intercept (REM-09)
 - **Remediation:** Removed misleading claims of a "live suspense GL / ring-fenced suspense ledger".
 - **Clarification:** Ghost-VPA operates strictly as a **Pre-Routing CBS Sidecar Intercept**. When an inbound payment attempt targets a canary VPA, the sidecar intercepts the attempt in $< 2\text{ ms}$, flags the sender as `REVIEW_REQUIRED`, emits a WebSocket tripwire alert, and prevents any posting instruction to the core banking ledger (`zero_funds_transferred = True`).
-- **Synchronized Across:** `README.md`, `OperationsDashboard.tsx`, `ingestion.py`, `ghost-vpa-architecture.md`, `demo-runbook.md`, `judge-pitch.md`.
+- **Synchronized Across:** `README.md`, `OperationsDashboard.tsx`, `ingestion.py`, `ghost-vpa-architecture.md`, and `demo-runbook.md`.
 
 ### 4.2 Role Switcher vs Enterprise RBAC (REM-10)
 - **Remediation:** Relabeled the role switcher in `Navbar.tsx` and `InvestigationWorkbench.tsx` as **"Demonstration Role-Based Action Gating (Simulated RBAC)"**.

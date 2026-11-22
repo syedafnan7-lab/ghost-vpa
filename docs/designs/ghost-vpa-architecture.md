@@ -5,7 +5,6 @@
 **Author:** Coordinated Senior FinTech Engineering Team
 **Review Harness:** Elephant-Goldfish Model (EGM)
 **Status:** Historical target architecture; not an implementation inventory
-**Track:** Digital Payments Fraud Detection and Prevention (Hackathon 2026)
 
 ---
 

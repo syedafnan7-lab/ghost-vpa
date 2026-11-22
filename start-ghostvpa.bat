@@ -1,8 +1,6 @@
 @echo off
 echo ========================================================
-echo   Starting Ghost-VPA: Bank-Controlled Cyber-Deception
-echo   Track 1: Digital Payments Fraud Detection
-echo   St Aloysius x RBIH FinTech Innovation Hackathon 2026
+echo   Starting Ghost-VPA Simulation Workbench
 echo ========================================================
 echo.
 

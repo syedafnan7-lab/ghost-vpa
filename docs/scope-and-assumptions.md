@@ -1,7 +1,6 @@
 # Ghost-VPA: Scope, Boundaries and Foundational Assumptions
 
 **Project:** Ghost-VPA — Bank-Controlled Honeypot VPAs  
-**Hackathon:** St Aloysius × RBIH FinTech Innovation Hackathon 2026  
 **Document:** `docs/scope-and-assumptions.md`  
 
 > **Implementation status (17 Nov 2026):** This document contains intended scope and assumptions, not a statement that those capabilities exist. The current application is simulation-only. It has no live bank/UPI/IMPS/NPCI integration, no production GL mapping, no valid comparative benchmark, and no authenticated case-action identity. Case mutations and benchmark results are disabled. RBI September 2026 KYC amendment directions are a draft proposal.

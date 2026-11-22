@@ -2,7 +2,7 @@
 
 Claims under test:
   - threat-model.md:29 "STIX 2.1 bundles sanitize all internal node IDs before export"
-  - FINAL-VERIFICATION-REPORT "valid OASIS STIX 2.1 JSON bundle"
+  - Earlier verification report "valid OASIS STIX 2.1 JSON bundle"
   - demo-runbook "validated threat bundle"
 """
 import sys, re, json
@@ -60,5 +60,5 @@ print("     valid_from stamped at export, not at the observed transaction.")
 print()
 
 print("=== WHO says this? comparison with the verified report claim ===")
-print("  FINAL-VERIFICATION-REPORT.md:44 'STIX 2.1 JSON schema validated' ->")
+print("  Earlier verification report: 'STIX 2.1 JSON schema validated' ->")
 print("  cannot be reproduced; stix2validator absent; pattern type invalid.")
